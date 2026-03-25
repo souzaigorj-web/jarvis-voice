@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis - Voice Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            color: #00d4ff;
+            opacity: 0.8;
+        }
+
+        .display-area {
+            width: 100%;
+            background: rgba(10, 20, 50, 0.6);
+            border: 2px solid #00d4ff;
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 20px rgba(0, 212, 255, 0.1);
+            overflow-y: auto;
+            max-height: 300px;
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-message {
+            background: rgba(0, 153, 255, 0.2);
+            border-left: 3px solid #0099ff;
+            text-align: left;
+            margin-left: 20px;
+        }
+
+        .jarvis-message {
+            background: rgba(0, 212, 255, 0.15);
+            border-left: 3px solid #00d4ff;
+            text-align: left;
+            margin-right: 20px;
+        }
+
+        .status {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #00d4ff;
+            min-height: 20px;
+            opacity: 0.8;
+        }
+
+        .mic-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .mic-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 3px solid #00d4ff;
+            background: linear-gradient(135deg, rgba(0, 153, 255, 0.3), rgba(0, 212, 255, 0.2));
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            position: relative;
+        }
+
+        .mic-button:hover:not(.listening) {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+
+        .mic-button.listening {
+            animation: pulse 1.5s infinite;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.4), rgba(0, 153, 255, 0.3));
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.6);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 20px rgba(0, 212, 255, 0.4), 0 0 40px rgba(0, 212, 255, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(0, 212, 255, 0.6), 0 0 80px rgba(0, 212, 255, 0.3);
+            }
+            100% {
+                box-shadow: 0 0 20px rgba(0, 212, 255, 0.4), 0 0 40px rgba(0, 212, 255, 0.2);
+            }
+        }
+
+        .mic-button:active {
+            transform: scale(0.95);
+        }
+
+        .button-label {
+            font-size: 0.75rem;
+            color: #00d4ff;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 212, 255, 0.3);
+            border-top: 3px solid #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            color: #ff6b6b;
+            padding: 12px 15px;
+            background: rgba(255, 107, 107, 0.1);
+            border-left: 3px solid #ff6b6b;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .mic-button {
+                width: 100px;
+                height: 100px;
+                font-size: 2.5rem;
+            }
+
+            .display-area {
+                min-height: 180px;
+                max-height: 250px;
+                padding: 15px;
+            }
+
+            .user-message, .jarvis-message {
+                margin-left: 10px;
+                margin-right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>JARVIS</h1>
+            <p>Your Personal AI Assistant</p>
+        </div>
+
+        <div class="display-area" id="displayArea">
+            <div class="status">Ready to listen...</div>
+        </div>
+
+        <div class="mic-container">
+            <button class="mic-button" id="micButton" title="Tap to speak">
+                🎤
+            </button>
+            <div class="button-label" id="buttonLabel">Tap to speak</div>
+        </div>
+
+        <div class="status" id="status"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const GEMINI_API_KEY = 'AIzaSyBU5erYV38IUmI0DNg37XaOaCXtMyiwoN8';
+        const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+        const SYSTEM_PROMPT = "Você é Jarvis, assistente pessoal inteligente e direto. Responda sempre no idioma que o usuário falar. Seja conciso mas completo. Você é parceiro de vida do usuário, ajudando com marketing, tecnologia, saúde, treinos, nutrição, automações e qualquer ideia que ele tiver.";
+
+        // DOM Elements
+        const micButton = document.getElementById('micButton');
+        const displayArea = document.getElementById('displayArea');
+        const status = document.getElementById('status');
+        const buttonLabel = document.getElementById('buttonLabel');
+
+        // Speech Recognition Setup
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'pt-BR';
+
+        let isListening = false;
+        let isSpeaking = false;
+
+        // Initialize
+        micButton.addEventListener('click', toggleListening);
+        recognition.addEventListener('start', onRecognitionStart);
+        recognition.addEventListener('result', onRecognitionResult);
+        recognition.addEventListener('end', onRecognitionEnd);
+        recognition.addEventListener('error', onRecognitionError);
+
+        function toggleListening() {
+            if (isListening) {
+                recognition.stop();
+            } else {
+                displayArea.innerHTML = '<div class="status">Listening...</div>';
+                recognition.start();
+            }
+        }
+
+        function onRecognitionStart() {
+            isListening = true;
+            micButton.classList.add('listening');
+            buttonLabel.textContent = 'Listening...';
+            status.textContent = 'Listening for your voice...';
+        }
+
+        function onRecognitionResult(event) {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+            }
+
+            if (event.isFinal) {
+                handleUserInput(transcript);
+            } else {
+                status.textContent = `Heard: "${transcript}"`;
+            }
+        }
+
+        function onRecognitionEnd() {
+            isListening = false;
+            micButton.classList.remove('listening');
+            buttonLabel.textContent = 'Tap to speak';
+        }
+
+        function onRecognitionError(event) {
+            status.textContent = `Error: ${event.error}`;
+            displayArea.innerHTML += `<div class="error">Error: ${event.error}</div>`;
+        }
+
+        async function handleUserInput(transcript) {
+            if (!transcript.trim()) {
+                status.textContent = 'No speech detected. Try again.';
+                return;
+            }
+
+            // Display user message
+            addMessage(transcript, 'user');
+            status.textContent = 'Processing...';
+
+            try {
+                // Get response from Gemini
+                const response = await getGeminiResponse(transcript);
+                addMessage(response, 'jarvis');
+                status.textContent = 'Speaking...';
+
+                // Speak the response
+                await speakResponse(response);
+                status.textContent = 'Ready to listen...';
+            } catch (error) {
+                console.error('Error:', error);
+                const errorMsg = `Error: ${error.message}`;
+                addMessage(errorMsg, 'jarvis');
+                status.textContent = 'Error occurred. Try again.';
+            }
+        }
+
+        async function getGeminiResponse(userMessage) {
+            const payload = {
+                contents: [
+                    {
+                        role: 'user',
+                        parts: [
+                            {
+                                text: `${SYSTEM_PROMPT}\n\nUser: ${userMessage}`
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (!content) {
+                throw new Error('No response from API');
+            }
+
+            return content;
+        }
+
+        function addMessage(text, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = text;
+            displayArea.appendChild(messageDiv);
+            displayArea.scrollTop = displayArea.scrollHeight;
+        }
+
+        function speakResponse(text) {
+            return new Promise((resolve, reject) => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'pt-BR';
+                utterance.rate = 1;
+                utterance.pitch = 1;
+                utterance.volume = 1;
+
+                utterance.onend = () => {
+                    isSpeaking = false;
+                    resolve();
+                };
+
+                utterance.onerror = (error) => {
+                    isSpeaking = false;
+                    reject(error);
+                };
+
+                isSpeaking = true;
+                window.speechSynthesis.speak(utterance);
+            });
+        }
+
+        // Auto-detect language after first input
+        recognition.addEventListener('result', (event) => {
+            if (event.isFinal && event.results.length > 0) {
+                const transcript = event.results[event.results.length - 1][0].transcript;
+                // Detect language and adjust recognition language
+                if (transcript.match(/[áàâãäéèêëíìîïóòôõöúùûüç]/i)) {
+                    recognition.lang = 'pt-BR';
+                } else if (transcript.match(/[áàâãäéèêëíìîïóòôõöúùûüñ]/i)) {
+                    recognition.lang = 'es-ES';
+                } else {
+                    recognition.lang = 'en-US';
+                }
+            }
+        }, { once: true });
+    </script>
+</body>
+</html>
