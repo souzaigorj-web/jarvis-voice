@@ -260,6 +260,29 @@
             font-weight: bold;
         }
 
+        .debug-log {
+            width: 100%;
+            background: rgba(0, 50, 100, 0.5);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.75rem;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            max-height: 120px;
+            overflow-y: auto;
+            line-height: 1.3;
+        }
+
+        .debug-log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+        }
+
+        .debug-log-entry:last-child {
+            border-bottom: none;
+        }
+
         @media (max-width: 480px) {
             .header h1 {
                 font-size: 2rem;
@@ -296,6 +319,11 @@
             .loading-text {
                 font-size: 1rem;
             }
+
+            .debug-log {
+                font-size: 0.65rem;
+                max-height: 100px;
+            }
         }
     </style>
 </head>
@@ -326,6 +354,10 @@
         <div class="status-line" id="statusLine">
             Aguardando...
         </div>
+
+        <div class="debug-log" id="debugLog">
+            <div class="debug-log-entry">Debug log initialized</div>
+        </div>
     </div>
 
     <script>
@@ -341,12 +373,32 @@
         const statusLine = document.getElementById('statusLine');
         const buttonLabel = document.getElementById('buttonLabel');
         const sendButton = document.getElementById('sendButton');
+        const debugLog = document.getElementById('debugLog');
 
         // State variables
         let isListening = false;
         let isProcessing = false;
         let isSpeaking = false;
         let currentTranscript = '';
+        let debugLogs = [];
+        let pendingResponse = null;
+
+        // Debug logging function
+        function addDebugLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = `[${timestamp}] ${message}`;
+            debugLogs.push(entry);
+            if (debugLogs.length > 5) {
+                debugLogs.shift();
+            }
+            updateDebugDisplay();
+            console.log(entry);
+        }
+
+        function updateDebugDisplay() {
+            debugLog.innerHTML = debugLogs.map(log => `<div class="debug-log-entry">${log}</div>`).join('');
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
 
         // Speech Recognition Setup
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -363,9 +415,24 @@
         recognition.addEventListener('end', onRecognitionEnd);
         recognition.addEventListener('error', onRecognitionError);
 
+        // Pre-load voices
+        function loadVoices() {
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                addDebugLog(`Voices loaded: ${voices.length} available`);
+                const ptVoices = voices.filter(v => v.lang.startsWith('pt'));
+                if (ptVoices.length > 0) {
+                    addDebugLog(`Portuguese voices: ${ptVoices.map(v => v.name).join(', ')}`);
+                }
+            }
+        }
+
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices();
+
         function updateStatus(status) {
             statusLine.textContent = status;
-            console.log('Status:', status);
+            addDebugLog(`Status: ${status}`);
         }
 
         function toggleListening() {
@@ -384,7 +451,7 @@
             micButton.classList.add('listening');
             buttonLabel.textContent = 'Listening...';
             updateStatus('Ouvindo...');
-            console.log('Speech recognition started');
+            addDebugLog('Speech recognition started');
         }
 
         function onRecognitionResult(event) {
@@ -394,15 +461,13 @@
                 const transcript = event.results[i][0].transcript;
                 
                 if (event.results[i].isFinal) {
-                    // Store final transcript
                     currentTranscript += transcript;
-                    console.log('Final transcript captured:', currentTranscript);
+                    addDebugLog(`Final transcript: "${transcript}"`);
                 } else {
                     interimTranscript += transcript;
                 }
             }
 
-            // Show interim results
             if (interimTranscript) {
                 buttonLabel.textContent = `Heard: "${interimTranscript}"`;
             }
@@ -411,18 +476,17 @@
         function onRecognitionEnd() {
             isListening = false;
             micButton.classList.remove('listening');
-            console.log('Speech recognition ended. Final transcript:', currentTranscript);
+            addDebugLog(`Recognition ended. Transcript: "${currentTranscript}"`);
 
             if (currentTranscript.trim()) {
-                // Show send button as fallback for iOS
                 sendButton.classList.add('visible');
                 buttonLabel.textContent = 'Tap "Enviar" or speak again';
                 updateStatus('Pronto para enviar');
                 
-                // Auto-send after a short delay (for non-iOS or if iOS auto-triggers)
+                // Auto-send after a short delay
                 setTimeout(() => {
                     if (currentTranscript.trim() && !isProcessing) {
-                        console.log('Auto-sending transcript after delay');
+                        addDebugLog('Auto-sending transcript');
                         sendTranscript();
                     }
                 }, 500);
@@ -433,7 +497,7 @@
         }
 
         function onRecognitionError(event) {
-            console.error('Recognition error:', event.error);
+            addDebugLog(`Recognition error: ${event.error}`);
             updateStatus(`Error: ${event.error}`);
             displayArea.innerHTML += `<div class="error">Error: ${event.error}</div>`;
             isListening = false;
@@ -456,10 +520,8 @@
         }
 
         async function handleUserInput(transcript) {
-            // Display user message
             addMessage(transcript, 'user');
             
-            // Show loading indicator
             isProcessing = true;
             micButton.classList.add('processing');
             buttonLabel.textContent = 'Processing...';
@@ -467,22 +529,22 @@
             showLoadingIndicator();
 
             try {
-                // Get response from Gemini
-                console.log('Sending request to Gemini API...');
+                addDebugLog('Calling Gemini API...');
                 const response = await getGeminiResponse(transcript);
-                console.log('Received response from Gemini:', response);
+                addDebugLog(`API response received: ${response.substring(0, 50)}...`);
                 
-                // Remove loading indicator
                 removeLoadingIndicator();
-                
                 addMessage(response, 'jarvis');
+                
+                // Store the response for TTS
+                pendingResponse = response;
                 updateStatus('Respondendo...');
-
-                // Speak the response
-                await speakResponse(response);
-                updateStatus('Aguardando...');
+                addDebugLog('Starting TTS...');
+                
+                // Trigger TTS directly - this maintains user gesture context better
+                speakResponseNow(response);
             } catch (error) {
-                console.error('Error:', error);
+                addDebugLog(`Error: ${error.message}`);
                 removeLoadingIndicator();
                 const errorMsg = `Error: ${error.message}`;
                 addMessage(errorMsg, 'jarvis');
@@ -509,9 +571,6 @@
                 ]
             };
 
-            console.log('API URL:', GEMINI_API_URL);
-            console.log('Payload:', JSON.stringify(payload, null, 2));
-
             const response = await fetch(GEMINI_API_URL, {
                 method: 'POST',
                 headers: {
@@ -520,20 +579,16 @@
                 body: JSON.stringify(payload)
             });
 
-            console.log('Response status:', response.status);
             const data = await response.json();
-            console.log('Response data:', JSON.stringify(data, null, 2));
 
             if (!response.ok) {
                 const errorMsg = data.error?.message || `API error: ${response.status}`;
                 throw new Error(errorMsg);
             }
 
-            // Extract text from the correct path: candidates[0].content.parts[0].text
             const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
             if (!content) {
-                console.error('Could not extract text from response:', data);
                 throw new Error('No response text from API');
             }
 
@@ -564,10 +619,12 @@
             }
         }
 
-        function speakResponse(text) {
-            return new Promise((resolve, reject) => {
+        // iOS Safari TTS fix: Call speak directly without Promise wrapper
+        function speakResponseNow(text) {
+            try {
                 // Cancel any ongoing speech
                 window.speechSynthesis.cancel();
+                addDebugLog('Cancelled previous speech');
 
                 // Create utterance
                 const utterance = new SpeechSynthesisUtterance(text);
@@ -576,56 +633,48 @@
                 utterance.pitch = 1;
                 utterance.volume = 1;
 
-                // Try to select Portuguese voice if available
+                // Try to select Portuguese voice
                 const voices = window.speechSynthesis.getVoices();
+                addDebugLog(`Available voices: ${voices.length}`);
+                
                 const ptVoice = voices.find(voice => voice.lang.startsWith('pt'));
                 if (ptVoice) {
                     utterance.voice = ptVoice;
-                    console.log('Using Portuguese voice:', ptVoice.name);
+                    addDebugLog(`Using voice: ${ptVoice.name}`);
                 } else {
-                    console.log('Portuguese voice not found, using default');
+                    addDebugLog('No Portuguese voice found, using default');
                 }
 
                 utterance.onstart = () => {
-                    console.log('Speech synthesis started');
+                    addDebugLog('TTS started');
                     isSpeaking = true;
                 };
 
                 utterance.onend = () => {
-                    console.log('Speech synthesis ended');
+                    addDebugLog('TTS ended');
                     isSpeaking = false;
-                    resolve();
+                    updateStatus('Aguardando...');
                 };
 
                 utterance.onerror = (error) => {
-                    console.error('Speech synthesis error:', error);
+                    addDebugLog(`TTS error: ${error.error}`);
                     isSpeaking = false;
-                    reject(error);
+                    updateStatus(`TTS Error: ${error.error}`);
                 };
 
-                // For iOS Safari compatibility: speak must be called within user gesture context
-                // Since this is called from handleUserInput which is triggered by user action, it should work
-                console.log('Starting speech synthesis...');
+                // Speak directly - this is called from user gesture context
+                addDebugLog('Calling window.speechSynthesis.speak()');
                 window.speechSynthesis.speak(utterance);
-            });
+            } catch (error) {
+                addDebugLog(`Exception in speakResponseNow: ${error.message}`);
+                updateStatus('Aguardando...');
+            }
         }
 
-        // Load voices when they become available
-        window.speechSynthesis.onvoiceschanged = () => {
-            const voices = window.speechSynthesis.getVoices();
-            console.log('Available voices:', voices.length);
-            voices.forEach(voice => {
-                if (voice.lang.startsWith('pt')) {
-                    console.log('Portuguese voice available:', voice.name);
-                }
-            });
-        };
-
-        // Auto-detect language after first input
+        // Auto-detect language
         recognition.addEventListener('result', (event) => {
             if (event.isFinal && event.results.length > 0) {
                 const transcript = event.results[event.results.length - 1][0].transcript;
-                // Detect language and adjust recognition language
                 if (transcript.match(/[áàâãäéèêëíìîïóòôõöúùûüç]/i)) {
                     recognition.lang = 'pt-BR';
                 } else if (transcript.match(/[áàâãäéèêëíìîïóòôõöúùûüñ]/i)) {
@@ -635,6 +684,8 @@
                 }
             }
         }, { once: true });
+
+        addDebugLog('Jarvis initialized');
     </script>
 </body>
 </html>
