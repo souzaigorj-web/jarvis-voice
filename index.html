@@ -382,14 +382,6 @@
             min-height: 20px;
         }
 
-        .controls-row {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
         .send-button {
             padding: 12px 30px;
             background: linear-gradient(135deg, #00d4ff, #0099ff);
@@ -589,10 +581,8 @@
         const elevenlabsKeyIndicator = document.getElementById('elevenlabsKeyIndicator');
         const resetButton = document.getElementById('resetButton');
 
-        // State variables
-        let isListening = false;
-        let isProcessing = false;
-        let isPlaying = false;
+        // UNIFIED STATE MACHINE
+        let appState = 'idle'; // 'idle', 'listening', 'processing', 'speaking'
         let currentTranscript = '';
         let debugLogs = [];
         let audioUnlocked = false;
@@ -680,6 +670,7 @@
         let recognition = null;
 
         function createNewRecognition() {
+            addDebugLog('Creating new SpeechRecognition instance');
             recognition = new SpeechRecognition();
             recognition.continuous = false;
             recognition.interimResults = true;
@@ -690,8 +681,6 @@
             recognition.addEventListener('result', onRecognitionResult);
             recognition.addEventListener('end', onRecognitionEnd);
             recognition.addEventListener('error', onRecognitionError);
-            
-            addDebugLog('New SpeechRecognition instance created');
         }
 
         // Create the first instance
@@ -710,6 +699,8 @@
         resetButton.addEventListener('click', resetAppState);
 
         micButton.addEventListener('click', (e) => {
+            addDebugLog(`Mic button tapped. Current state: ${appState}`);
+            
             // Unlock audio on first tap for iOS Safari
             if (!audioUnlocked) {
                 audioPlayer.play().catch(() => {
@@ -718,8 +709,17 @@
                 audioUnlocked = true;
                 addDebugLog('Audio context unlocked');
             }
-            toggleListening();
+            
+            // Only start listening if in idle state
+            if (appState === 'idle') {
+                startListening();
+            } else if (appState === 'listening') {
+                stopListening();
+            } else {
+                addDebugLog(`Cannot start listening. Current state: ${appState}`);
+            }
         });
+        
         sendButton.addEventListener('click', sendTranscript);
 
         function updateStatus(status) {
@@ -728,10 +728,10 @@
         }
 
         function resetAppState() {
-            addDebugLog('Resetting app state...');
-            isListening = false;
-            isProcessing = false;
-            isPlaying = false;
+            addDebugLog('=== FORCE RESET INITIATED ===');
+            addDebugLog(`State before reset: ${appState}`);
+            
+            appState = 'idle';
             currentTranscript = '';
             
             // Clear any pending timeouts
@@ -756,27 +756,23 @@
             try {
                 recognition.stop();
             } catch (e) {
-                // Ignore errors
+                addDebugLog(`Error stopping recognition: ${e.message}`);
             }
             
             // Remove loading indicator if present
             removeLoadingIndicator();
             
-            addDebugLog('App state reset complete');
+            addDebugLog('=== RESET COMPLETE. State is now: idle ===');
         }
 
         function setProcessingTimeout() {
-            // Clear any existing timeout
             if (processingTimeout) {
                 clearTimeout(processingTimeout);
             }
             
-            // Set a 15-second timeout to auto-reset if processing takes too long
             processingTimeout = setTimeout(() => {
-                if (isProcessing) {
-                    addDebugLog('Processing timeout - auto-resetting');
-                    resetAppState();
-                }
+                addDebugLog('⚠️ PROCESSING TIMEOUT - Auto-resetting');
+                resetAppState();
             }, 15000);
         }
 
@@ -787,36 +783,52 @@
             }
         }
 
-        function toggleListening() {
-            if (isListening) {
-                recognition.stop();
-            } else if (!isProcessing && !isPlaying) {
-                currentTranscript = '';
-                sendButton.classList.remove('visible');
-                // Create a fresh recognition instance for this session
-                createNewRecognition();
+        function startListening() {
+            addDebugLog('>>> STARTING LISTENING <<<');
+            appState = 'listening';
+            currentTranscript = '';
+            sendButton.classList.remove('visible');
+            
+            // Create a fresh recognition instance for this session
+            createNewRecognition();
+            
+            try {
                 recognition.start();
+                addDebugLog('recognition.start() called');
+            } catch (e) {
+                addDebugLog(`Error calling recognition.start(): ${e.message}`);
+                appState = 'idle';
+            }
+        }
+
+        function stopListening() {
+            addDebugLog('>>> STOPPING LISTENING <<<');
+            try {
+                recognition.stop();
+                addDebugLog('recognition.stop() called');
+            } catch (e) {
+                addDebugLog(`Error calling recognition.stop(): ${e.message}`);
             }
         }
 
         function onRecognitionStart() {
-            isListening = true;
-            currentTranscript = '';
+            addDebugLog('✓ onRecognitionStart fired');
             micButton.classList.add('listening');
             buttonLabel.textContent = 'Listening...';
             updateStatus('Ouvindo...');
-            addDebugLog('Speech recognition started');
         }
 
         function onRecognitionResult(event) {
+            addDebugLog(`onRecognitionResult: ${event.results.length} results`);
             let interimTranscript = '';
             
             for (let i = event.resultIndex; i < event.results.length; i++) {
                 const transcript = event.results[i][0].transcript;
+                const confidence = event.results[i][0].confidence;
                 
                 if (event.results[i].isFinal) {
                     currentTranscript += transcript;
-                    addDebugLog(`Final transcript: "${transcript}"`);
+                    addDebugLog(`✓ FINAL: "${transcript}" (confidence: ${(confidence * 100).toFixed(0)}%)`);
                     
                     // Auto-detect language from transcript
                     if (transcript.match(/[áàâãäéèêëíìîïóòôõöúùûüç]/i)) {
@@ -837,53 +849,70 @@
         }
 
         function onRecognitionEnd() {
-            isListening = false;
+            addDebugLog(`✓ onRecognitionEnd fired. Transcript: "${currentTranscript}"`);
+            addDebugLog(`Current appState: ${appState}`);
+            
             micButton.classList.remove('listening');
-            addDebugLog(`Recognition ended. Transcript: "${currentTranscript}"`);
 
             if (currentTranscript.trim()) {
+                addDebugLog('Transcript is not empty, showing send button');
                 sendButton.classList.add('visible');
                 buttonLabel.textContent = 'Tap "Enviar" or speak again';
                 updateStatus('Pronto para enviar');
                 
                 // Auto-send after a short delay
                 setTimeout(() => {
-                    if (currentTranscript.trim() && !isProcessing) {
-                        addDebugLog('Auto-sending transcript');
+                    addDebugLog(`Auto-send check: transcript="${currentTranscript.trim()}", appState="${appState}"`);
+                    if (currentTranscript.trim() && appState === 'listening') {
+                        addDebugLog('✓ Auto-sending transcript');
                         sendTranscript();
                     }
                 }, 500);
             } else {
+                addDebugLog('Transcript is empty, resetting to idle');
+                appState = 'idle';
                 buttonLabel.textContent = 'Tap to speak';
                 updateStatus('Aguardando...');
             }
         }
 
         function onRecognitionError(event) {
+            addDebugLog(`⚠️ onRecognitionError: ${event.error}`);
+            
             // Ignore 'aborted' and 'no-speech' errors - these are normal iOS behaviors
             if (event.error === 'aborted' || event.error === 'no-speech') {
-                addDebugLog(`Recognition ${event.error} (normal)`);
-                isListening = false;
+                addDebugLog(`Ignoring normal error: ${event.error}`);
+                if (appState === 'listening') {
+                    appState = 'idle';
+                }
                 micButton.classList.remove('listening');
                 buttonLabel.textContent = 'Tap to speak';
                 updateStatus('Aguardando...');
                 return;
             }
-            addDebugLog(`Recognition error: ${event.error}`);
+            
+            addDebugLog(`ERROR: ${event.error}`);
             updateStatus(`Error: ${event.error}`);
             displayArea.innerHTML += `<div class="error">Error: ${event.error}</div>`;
-            isListening = false;
+            
+            if (appState === 'listening') {
+                appState = 'idle';
+            }
             micButton.classList.remove('listening');
             buttonLabel.textContent = 'Tap to speak';
         }
 
         function sendTranscript() {
+            addDebugLog(`>>> sendTranscript called. appState=${appState}, transcript="${currentTranscript}"`);
+            
             if (!currentTranscript.trim()) {
+                addDebugLog('No speech detected');
                 updateStatus('No speech detected. Try again.');
                 return;
             }
 
-            if (isProcessing) {
+            if (appState !== 'listening' && appState !== 'idle') {
+                addDebugLog(`Cannot send. appState is ${appState}`);
                 return;
             }
 
@@ -892,9 +921,10 @@
         }
 
         async function handleUserInput(transcript) {
+            addDebugLog(`>>> handleUserInput called with: "${transcript}"`);
             addMessage(transcript, 'user');
             
-            isProcessing = true;
+            appState = 'processing';
             setProcessingTimeout();
             micButton.classList.add('processing');
             buttonLabel.textContent = 'Processing...';
@@ -904,7 +934,7 @@
             try {
                 addDebugLog('Calling Gemini API...');
                 const response = await getGeminiResponse(transcript);
-                addDebugLog(`API response received: ${response.substring(0, 50)}...`);
+                addDebugLog(`✓ API response received: ${response.substring(0, 50)}...`);
                 
                 removeLoadingIndicator();
                 addMessage(response, 'jarvis');
@@ -913,12 +943,12 @@
                 addDebugLog('Calling ElevenLabs TTS API...');
                 await playAudioResponse(response);
             } catch (error) {
-                addDebugLog(`Error: ${error.message}`);
+                addDebugLog(`❌ Error: ${error.message}`);
                 removeLoadingIndicator();
                 const errorMsg = `Error: ${error.message}`;
                 addMessage(errorMsg, 'jarvis');
                 updateStatus(`Erro: ${error.message}`);
-                isProcessing = false;
+                appState = 'idle';
                 micButton.classList.remove('processing');
                 buttonLabel.textContent = 'Tap to speak';
                 currentTranscript = '';
@@ -998,7 +1028,7 @@
                     throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
                 }
 
-                addDebugLog('Audio received from ElevenLabs');
+                addDebugLog('✓ Audio received from ElevenLabs');
 
                 // Convert response to blob
                 const audioBlob = await response.blob();
@@ -1006,35 +1036,39 @@
 
                 // Create blob URL
                 const blobUrl = URL.createObjectURL(audioBlob);
-                addDebugLog(`Blob URL created: ${blobUrl.substring(0, 50)}...`);
+                addDebugLog(`Blob URL created`);
 
                 // Use global audio player for iOS Safari compatibility
                 audioPlayer.src = blobUrl;
-                isPlaying = true;
+                appState = 'speaking';
                 updateStatus('Respondendo...');
-                addDebugLog('Starting audio playback with global player');
+                addDebugLog('Starting audio playback');
 
                 // Set up event handlers
                 audioPlayer.onended = () => {
-                    addDebugLog('Audio playback ended');
-                    isPlaying = false;
-                    isProcessing = false;
-                    isListening = false;
-                    clearProcessingTimeout();
-                    updateStatus('Aguardando...');
-                    micButton.classList.remove('processing', 'listening');
-                    buttonLabel.textContent = 'Tap to speak';
-                    currentTranscript = '';
-                    sendButton.classList.remove('visible');
-                    // Clean up blob URL
-                    URL.revokeObjectURL(blobUrl);
+                    addDebugLog('✓ audioPlayer.onended fired');
+                    addDebugLog('Waiting 500ms before resetting to idle...');
+                    
+                    // 500ms delay before resetting to avoid race conditions on iOS
+                    setTimeout(() => {
+                        addDebugLog('>>> RESETTING TO IDLE AFTER AUDIO <<<');
+                        appState = 'idle';
+                        clearProcessingTimeout();
+                        updateStatus('Aguardando...');
+                        micButton.classList.remove('processing', 'listening');
+                        buttonLabel.textContent = 'Tap to speak';
+                        currentTranscript = '';
+                        sendButton.classList.remove('visible');
+                        addDebugLog('✓ State reset complete. Ready for next turn.');
+                        
+                        // Clean up blob URL
+                        URL.revokeObjectURL(blobUrl);
+                    }, 500);
                 };
 
                 audioPlayer.onerror = (error) => {
-                    addDebugLog(`Audio playback error: ${error}`);
-                    isPlaying = false;
-                    isProcessing = false;
-                    isListening = false;
+                    addDebugLog(`❌ audioPlayer.onerror: ${error}`);
+                    appState = 'idle';
                     clearProcessingTimeout();
                     updateStatus('Aguardando...');
                     micButton.classList.remove('processing', 'listening');
@@ -1048,10 +1082,8 @@
                 const playPromise = audioPlayer.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(error => {
-                        addDebugLog(`Play error: ${error.message}`);
-                        isPlaying = false;
-                        isProcessing = false;
-                        isListening = false;
+                        addDebugLog(`❌ audioPlayer.play() error: ${error.message}`);
+                        appState = 'idle';
                         clearProcessingTimeout();
                         updateStatus('Aguardando...');
                         micButton.classList.remove('processing', 'listening');
@@ -1061,9 +1093,8 @@
                     });
                 }
             } catch (error) {
-                addDebugLog(`Error in playAudioResponse: ${error.message}`);
-                isPlaying = false;
-                isProcessing = false;
+                addDebugLog(`❌ Error in playAudioResponse: ${error.message}`);
+                appState = 'idle';
                 clearProcessingTimeout();
                 throw error;
             }
@@ -1093,9 +1124,7 @@
             }
         }
 
-        // Note: Language auto-detection is now handled in onRecognitionResult
-
-        addDebugLog('Jarvis initialized with ElevenLabs TTS and Settings');
+        addDebugLog('Jarvis initialized with unified state machine');
     </script>
 </body>
 </html>
