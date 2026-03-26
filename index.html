@@ -30,12 +30,12 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 30px;
+            gap: 20px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .header h1 {
@@ -75,6 +75,7 @@
             font-size: 0.95rem;
             line-height: 1.5;
             animation: slideIn 0.3s ease-out;
+            word-wrap: break-word;
         }
 
         @keyframes slideIn {
@@ -102,24 +103,23 @@
             margin-right: 20px;
         }
 
-        .loading-indicator {
+        .loading-container {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
-            padding: 12px 15px;
-            background: rgba(0, 212, 255, 0.15);
-            border-left: 3px solid #00d4ff;
-            border-radius: 10px;
-            margin-right: 20px;
+            justify-content: center;
+            gap: 15px;
+            padding: 30px 20px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 15px;
             animation: slideIn 0.3s ease-out;
         }
 
         .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            border-top: 2px solid #00d4ff;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 212, 255, 0.3);
+            border-top: 4px solid #00d4ff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -132,15 +132,9 @@
 
         .loading-text {
             color: #00d4ff;
-            font-size: 0.95rem;
-        }
-
-        .status {
+            font-size: 1.2rem;
+            font-weight: bold;
             text-align: center;
-            font-size: 0.85rem;
-            color: #00d4ff;
-            min-height: 20px;
-            opacity: 0.8;
         }
 
         .error {
@@ -153,12 +147,19 @@
             animation: slideIn 0.3s ease-out;
         }
 
-        .mic-container {
+        .controls-section {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             width: 100%;
+        }
+
+        .mic-button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
         }
 
         .mic-button {
@@ -211,10 +212,52 @@
         }
 
         .button-label {
-            font-size: 0.75rem;
+            font-size: 0.85rem;
             color: #00d4ff;
-            margin-top: 10px;
             text-align: center;
+            min-height: 20px;
+        }
+
+        .send-button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            border: none;
+            border-radius: 8px;
+            color: #0a0e27;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            display: none;
+        }
+
+        .send-button.visible {
+            display: block;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+
+        .send-button:active {
+            transform: scale(0.95);
+        }
+
+        .status-line {
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #00d4ff;
+            padding: 10px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 8px;
+            min-height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
         }
 
         @media (max-width: 480px) {
@@ -234,9 +277,24 @@
                 padding: 15px;
             }
 
-            .user-message, .jarvis-message, .loading-indicator {
+            .user-message, .jarvis-message {
                 margin-left: 10px;
                 margin-right: 10px;
+            }
+
+            .loading-container {
+                padding: 20px 15px;
+            }
+
+            .spinner {
+                width: 35px;
+                height: 35px;
+                border: 3px solid rgba(0, 212, 255, 0.3);
+                border-top: 3px solid #00d4ff;
+            }
+
+            .loading-text {
+                font-size: 1rem;
             }
         }
     </style>
@@ -249,17 +307,25 @@
         </div>
 
         <div class="display-area" id="displayArea">
-            <div class="status">Ready to listen...</div>
+            <div class="message jarvis-message">Ready to listen...</div>
         </div>
 
-        <div class="mic-container">
-            <button class="mic-button" id="micButton" title="Tap to speak">
-                🎤
+        <div class="controls-section">
+            <div class="mic-button-container">
+                <button class="mic-button" id="micButton" title="Tap to speak">
+                    🎤
+                </button>
+                <div class="button-label" id="buttonLabel">Tap to speak</div>
+            </div>
+
+            <button class="send-button" id="sendButton" title="Send message">
+                Enviar
             </button>
-            <div class="button-label" id="buttonLabel">Tap to speak</div>
         </div>
 
-        <div class="status" id="status"></div>
+        <div class="status-line" id="statusLine">
+            Aguardando...
+        </div>
     </div>
 
     <script>
@@ -272,8 +338,15 @@
         // DOM Elements
         const micButton = document.getElementById('micButton');
         const displayArea = document.getElementById('displayArea');
-        const status = document.getElementById('status');
+        const statusLine = document.getElementById('statusLine');
         const buttonLabel = document.getElementById('buttonLabel');
+        const sendButton = document.getElementById('sendButton');
+
+        // State variables
+        let isListening = false;
+        let isProcessing = false;
+        let isSpeaking = false;
+        let currentTranscript = '';
 
         // Speech Recognition Setup
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -282,76 +355,116 @@
         recognition.interimResults = true;
         recognition.lang = 'pt-BR';
 
-        let isListening = false;
-        let isProcessing = false;
-        let isSpeaking = false;
-
         // Initialize
         micButton.addEventListener('click', toggleListening);
+        sendButton.addEventListener('click', sendTranscript);
         recognition.addEventListener('start', onRecognitionStart);
         recognition.addEventListener('result', onRecognitionResult);
         recognition.addEventListener('end', onRecognitionEnd);
         recognition.addEventListener('error', onRecognitionError);
 
+        function updateStatus(status) {
+            statusLine.textContent = status;
+            console.log('Status:', status);
+        }
+
         function toggleListening() {
             if (isListening) {
                 recognition.stop();
             } else if (!isProcessing && !isSpeaking) {
-                displayArea.innerHTML = '<div class="status">Listening...</div>';
+                currentTranscript = '';
+                sendButton.classList.remove('visible');
                 recognition.start();
             }
         }
 
         function onRecognitionStart() {
             isListening = true;
+            currentTranscript = '';
             micButton.classList.add('listening');
             buttonLabel.textContent = 'Listening...';
-            status.textContent = 'Listening for your voice...';
+            updateStatus('Ouvindo...');
+            console.log('Speech recognition started');
         }
 
         function onRecognitionResult(event) {
-            let transcript = '';
+            let interimTranscript = '';
+            
             for (let i = event.resultIndex; i < event.results.length; i++) {
-                transcript += event.results[i][0].transcript;
+                const transcript = event.results[i][0].transcript;
+                
+                if (event.results[i].isFinal) {
+                    // Store final transcript
+                    currentTranscript += transcript;
+                    console.log('Final transcript captured:', currentTranscript);
+                } else {
+                    interimTranscript += transcript;
+                }
             }
 
-            if (event.isFinal) {
-                handleUserInput(transcript);
-            } else {
-                status.textContent = `Heard: "${transcript}"`;
+            // Show interim results
+            if (interimTranscript) {
+                buttonLabel.textContent = `Heard: "${interimTranscript}"`;
             }
         }
 
         function onRecognitionEnd() {
             isListening = false;
             micButton.classList.remove('listening');
-            if (!isProcessing) {
+            console.log('Speech recognition ended. Final transcript:', currentTranscript);
+
+            if (currentTranscript.trim()) {
+                // Show send button as fallback for iOS
+                sendButton.classList.add('visible');
+                buttonLabel.textContent = 'Tap "Enviar" or speak again';
+                updateStatus('Pronto para enviar');
+                
+                // Auto-send after a short delay (for non-iOS or if iOS auto-triggers)
+                setTimeout(() => {
+                    if (currentTranscript.trim() && !isProcessing) {
+                        console.log('Auto-sending transcript after delay');
+                        sendTranscript();
+                    }
+                }, 500);
+            } else {
                 buttonLabel.textContent = 'Tap to speak';
+                updateStatus('Aguardando...');
             }
         }
 
         function onRecognitionError(event) {
-            status.textContent = `Error: ${event.error}`;
+            console.error('Recognition error:', event.error);
+            updateStatus(`Error: ${event.error}`);
             displayArea.innerHTML += `<div class="error">Error: ${event.error}</div>`;
             isListening = false;
             micButton.classList.remove('listening');
             buttonLabel.textContent = 'Tap to speak';
         }
 
-        async function handleUserInput(transcript) {
-            if (!transcript.trim()) {
-                status.textContent = 'No speech detected. Try again.';
+        function sendTranscript() {
+            if (!currentTranscript.trim()) {
+                updateStatus('No speech detected. Try again.');
                 return;
             }
 
+            if (isProcessing) {
+                return;
+            }
+
+            sendButton.classList.remove('visible');
+            handleUserInput(currentTranscript);
+        }
+
+        async function handleUserInput(transcript) {
             // Display user message
             addMessage(transcript, 'user');
             
             // Show loading indicator
             isProcessing = true;
             micButton.classList.add('processing');
-            buttonLabel.textContent = 'Processando...';
-            addLoadingIndicator();
+            buttonLabel.textContent = 'Processing...';
+            updateStatus('Processando...');
+            showLoadingIndicator();
 
             try {
                 // Get response from Gemini
@@ -363,21 +476,22 @@
                 removeLoadingIndicator();
                 
                 addMessage(response, 'jarvis');
-                status.textContent = 'Speaking...';
+                updateStatus('Respondendo...');
 
                 // Speak the response
                 await speakResponse(response);
-                status.textContent = 'Ready to listen...';
+                updateStatus('Aguardando...');
             } catch (error) {
                 console.error('Error:', error);
                 removeLoadingIndicator();
                 const errorMsg = `Error: ${error.message}`;
                 addMessage(errorMsg, 'jarvis');
-                status.textContent = 'Error occurred. Try again.';
+                updateStatus(`Erro: ${error.message}`);
             } finally {
                 isProcessing = false;
                 micButton.classList.remove('processing');
                 buttonLabel.textContent = 'Tap to speak';
+                currentTranscript = '';
             }
         }
 
@@ -434,9 +548,9 @@
             displayArea.scrollTop = displayArea.scrollHeight;
         }
 
-        function addLoadingIndicator() {
+        function showLoadingIndicator() {
             const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'loading-indicator';
+            loadingDiv.className = 'loading-container';
             loadingDiv.id = 'loadingIndicator';
             loadingDiv.innerHTML = '<div class="spinner"></div><div class="loading-text">Processando...</div>';
             displayArea.appendChild(loadingDiv);
