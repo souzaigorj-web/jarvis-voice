@@ -365,7 +365,10 @@
         const GEMINI_API_KEY = 'AIzaSyCyxFqPR0SICAG8k9KKAjOnbJY5DAJ-9b4';
         const GEMINI_MODEL = 'gemini-2.5-flash';
         const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-        const SYSTEM_PROMPT = "Você é Jarvis, assistente pessoal inteligente e direto. Responda sempre no idioma que o usuário falar. Seja conciso mas completo. Você é parceiro de vida do usuário, ajudando com marketing, tecnologia, saúde, treinos, nutrição, automações e qualquer ideia que ele tiver.";
+        const ELEVENLABS_API_KEY = 'sk_4c644f17c237701fccff3c0ad7faa743b7262b977cec4848';
+        const ELEVENLABS_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL';
+        const ELEVENLABS_API_URL = `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`;
+        const SYSTEM_PROMPT = "Você é Jarvis, assistente pessoal inteligente e direto do usuário. Responda sempre no idioma que o usuário falar. Seja conciso mas completo.";
 
         // DOM Elements
         const micButton = document.getElementById('micButton');
@@ -378,10 +381,10 @@
         // State variables
         let isListening = false;
         let isProcessing = false;
-        let isSpeaking = false;
+        let isPlaying = false;
         let currentTranscript = '';
         let debugLogs = [];
-        let pendingResponse = null;
+        let currentAudio = null;
 
         // Debug logging function
         function addDebugLog(message) {
@@ -415,21 +418,6 @@
         recognition.addEventListener('end', onRecognitionEnd);
         recognition.addEventListener('error', onRecognitionError);
 
-        // Pre-load voices
-        function loadVoices() {
-            const voices = window.speechSynthesis.getVoices();
-            if (voices.length > 0) {
-                addDebugLog(`Voices loaded: ${voices.length} available`);
-                const ptVoices = voices.filter(v => v.lang.startsWith('pt'));
-                if (ptVoices.length > 0) {
-                    addDebugLog(`Portuguese voices: ${ptVoices.map(v => v.name).join(', ')}`);
-                }
-            }
-        }
-
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-        loadVoices();
-
         function updateStatus(status) {
             statusLine.textContent = status;
             addDebugLog(`Status: ${status}`);
@@ -438,7 +426,7 @@
         function toggleListening() {
             if (isListening) {
                 recognition.stop();
-            } else if (!isProcessing && !isSpeaking) {
+            } else if (!isProcessing && !isPlaying) {
                 currentTranscript = '';
                 sendButton.classList.remove('visible');
                 recognition.start();
@@ -541,13 +529,11 @@
                 removeLoadingIndicator();
                 addMessage(response, 'jarvis');
                 
-                // Store the response for TTS
-                pendingResponse = response;
-                updateStatus('Respondendo...');
-                addDebugLog('Starting TTS...');
+                // Get audio from ElevenLabs
+                addDebugLog('Calling ElevenLabs TTS API...');
+                await playAudioResponse(response);
                 
-                // Trigger TTS directly - this maintains user gesture context better
-                speakResponseNow(response);
+                updateStatus('Aguardando...');
             } catch (error) {
                 addDebugLog(`Error: ${error.message}`);
                 removeLoadingIndicator();
@@ -600,6 +586,78 @@
             return content;
         }
 
+        async function playAudioResponse(text) {
+            try {
+                // Stop any currently playing audio
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio = null;
+                }
+
+                addDebugLog('Requesting audio from ElevenLabs...');
+                
+                const payload = {
+                    text: text,
+                    model_id: 'eleven_multilingual_v2',
+                    voice_settings: {
+                        stability: 0.5,
+                        similarity_boost: 0.75
+                    }
+                };
+
+                const response = await fetch(ELEVENLABS_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'xi-api-key': ELEVENLABS_API_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
+                }
+
+                addDebugLog('Audio received from ElevenLabs');
+
+                // Convert response to blob
+                const audioBlob = await response.blob();
+                addDebugLog(`Audio blob size: ${audioBlob.size} bytes`);
+
+                // Create blob URL
+                const blobUrl = URL.createObjectURL(audioBlob);
+                addDebugLog(`Blob URL created: ${blobUrl.substring(0, 50)}...`);
+
+                // Create and play audio
+                currentAudio = new Audio(blobUrl);
+                isPlaying = true;
+                updateStatus('Respondendo...');
+                addDebugLog('Starting audio playback');
+
+                currentAudio.onended = () => {
+                    addDebugLog('Audio playback ended');
+                    isPlaying = false;
+                    updateStatus('Aguardando...');
+                    // Clean up blob URL
+                    URL.revokeObjectURL(blobUrl);
+                };
+
+                currentAudio.onerror = (error) => {
+                    addDebugLog(`Audio playback error: ${error}`);
+                    isPlaying = false;
+                    updateStatus('Aguardando...');
+                    URL.revokeObjectURL(blobUrl);
+                };
+
+                currentAudio.play();
+            } catch (error) {
+                addDebugLog(`Error in playAudioResponse: ${error.message}`);
+                isPlaying = false;
+                throw error;
+            }
+        }
+
         function addMessage(text, type) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}-message`;
@@ -624,62 +682,6 @@
             }
         }
 
-        // iOS Safari TTS fix: Call speak directly without Promise wrapper
-        function speakResponseNow(text) {
-            try {
-                // Cancel any ongoing speech
-                window.speechSynthesis.cancel();
-                addDebugLog('Cancelled previous speech');
-
-                // Create utterance
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'pt-BR';
-                utterance.rate = 1;
-                utterance.pitch = 1;
-                utterance.volume = 1;
-
-                // Try to select Portuguese voice
-                const voices = window.speechSynthesis.getVoices();
-                addDebugLog(`Available voices: ${voices.length}`);
-                
-                const ptVoice = voices.find(voice => voice.lang.startsWith('pt'));
-                if (ptVoice) {
-                    utterance.voice = ptVoice;
-                    addDebugLog(`Using voice: ${ptVoice.name}`);
-                } else {
-                    addDebugLog('No Portuguese voice found, using default');
-                }
-
-                utterance.onstart = () => {
-                    addDebugLog('TTS started');
-                    isSpeaking = true;
-                    // Stop listening while speaking
-                    if (isListening) {
-                        recognition.stop();
-                    }
-                };
-
-                utterance.onend = () => {
-                    addDebugLog('TTS ended');
-                    isSpeaking = false;
-                    updateStatus('Aguardando...');
-                };
-
-                utterance.onerror = (error) => {
-                    addDebugLog(`TTS error: ${error.error}`);
-                    isSpeaking = false;
-                    updateStatus(`TTS Error: ${error.error}`);
-                };
-
-                // Speak directly - this is called from user gesture context
-                addDebugLog('Calling window.speechSynthesis.speak()');
-                window.speechSynthesis.speak(utterance);
-            } catch (error) {
-                addDebugLog(`Exception in speakResponseNow: ${error.message}`);
-                updateStatus('Aguardando...');
-            }
-        }
-
         // Auto-detect language
         recognition.addEventListener('result', (event) => {
             if (event.isFinal && event.results.length > 0) {
@@ -694,7 +696,7 @@
             }
         }, { once: true });
 
-        addDebugLog('Jarvis initialized');
+        addDebugLog('Jarvis initialized with ElevenLabs TTS');
     </script>
 </body>
 </html>
