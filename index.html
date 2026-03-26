@@ -333,7 +333,7 @@
         const GEMINI_API_KEY = 'AIzaSyCyxFqPR0SICAG8k9KKAjOnbJY5DAJ-9b4';
         const GEMINI_MODEL = 'gemini-2.5-flash';
         const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-        const SYSTEM_PROMPT = "Você é Jarvis, assistente pessoal inteligente e direto. Responda sempre no idioma que o usuário falar. Seja conciso mas completo. Você é parceiro de vida do usuário, ajudando com marketing, tecnologia, saúde, treinos, nutrição, automações e qualquer ideia que ele tiver.";
+        const SYSTEM_PROMPT = "Você é Jarvis, assistente pessoal inteligente e direto. Responda sempre no idioma que o usuário falar. Seja conciso mas completo. Você é parceiro de vida do usuário, ajudando com marketing, tecnologia, saúde, treinos, nutrição, automações e qualquer ideia que ele tiver. Responda apenas em texto.";
 
         // DOM Elements
         const micButton = document.getElementById('micButton');
@@ -566,26 +566,60 @@
 
         function speakResponse(text) {
             return new Promise((resolve, reject) => {
+                // Cancel any ongoing speech
+                window.speechSynthesis.cancel();
+
+                // Create utterance
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'pt-BR';
                 utterance.rate = 1;
                 utterance.pitch = 1;
                 utterance.volume = 1;
 
+                // Try to select Portuguese voice if available
+                const voices = window.speechSynthesis.getVoices();
+                const ptVoice = voices.find(voice => voice.lang.startsWith('pt'));
+                if (ptVoice) {
+                    utterance.voice = ptVoice;
+                    console.log('Using Portuguese voice:', ptVoice.name);
+                } else {
+                    console.log('Portuguese voice not found, using default');
+                }
+
+                utterance.onstart = () => {
+                    console.log('Speech synthesis started');
+                    isSpeaking = true;
+                };
+
                 utterance.onend = () => {
+                    console.log('Speech synthesis ended');
                     isSpeaking = false;
                     resolve();
                 };
 
                 utterance.onerror = (error) => {
+                    console.error('Speech synthesis error:', error);
                     isSpeaking = false;
                     reject(error);
                 };
 
-                isSpeaking = true;
+                // For iOS Safari compatibility: speak must be called within user gesture context
+                // Since this is called from handleUserInput which is triggered by user action, it should work
+                console.log('Starting speech synthesis...');
                 window.speechSynthesis.speak(utterance);
             });
         }
+
+        // Load voices when they become available
+        window.speechSynthesis.onvoiceschanged = () => {
+            const voices = window.speechSynthesis.getVoices();
+            console.log('Available voices:', voices.length);
+            voices.forEach(voice => {
+                if (voice.lang.startsWith('pt')) {
+                    console.log('Portuguese voice available:', voice.name);
+                }
+            });
+        };
 
         // Auto-detect language after first input
         recognition.addEventListener('result', (event) => {
