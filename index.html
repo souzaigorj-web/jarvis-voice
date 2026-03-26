@@ -677,10 +677,25 @@
 
         // Speech Recognition Setup
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.lang = 'pt-BR';
+        let recognition = null;
+
+        function createNewRecognition() {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'pt-BR';
+            
+            // Attach event handlers to the new instance
+            recognition.addEventListener('start', onRecognitionStart);
+            recognition.addEventListener('result', onRecognitionResult);
+            recognition.addEventListener('end', onRecognitionEnd);
+            recognition.addEventListener('error', onRecognitionError);
+            
+            addDebugLog('New SpeechRecognition instance created');
+        }
+
+        // Create the first instance
+        createNewRecognition();
 
         // Initialize
         loadAPIKeys();
@@ -706,10 +721,6 @@
             toggleListening();
         });
         sendButton.addEventListener('click', sendTranscript);
-        recognition.addEventListener('start', onRecognitionStart);
-        recognition.addEventListener('result', onRecognitionResult);
-        recognition.addEventListener('end', onRecognitionEnd);
-        recognition.addEventListener('error', onRecognitionError);
 
         function updateStatus(status) {
             statusLine.textContent = status;
@@ -782,6 +793,8 @@
             } else if (!isProcessing && !isPlaying) {
                 currentTranscript = '';
                 sendButton.classList.remove('visible');
+                // Create a fresh recognition instance for this session
+                createNewRecognition();
                 recognition.start();
             }
         }
@@ -804,6 +817,15 @@
                 if (event.results[i].isFinal) {
                     currentTranscript += transcript;
                     addDebugLog(`Final transcript: "${transcript}"`);
+                    
+                    // Auto-detect language from transcript
+                    if (transcript.match(/[áàâãäéèêëíìîïóòôõöúùûüç]/i)) {
+                        recognition.lang = 'pt-BR';
+                    } else if (transcript.match(/[áàâãäéèêëíìîïóòôõöúùûüñ]/i)) {
+                        recognition.lang = 'es-ES';
+                    } else {
+                        recognition.lang = 'en-US';
+                    }
                 } else {
                     interimTranscript += transcript;
                 }
@@ -838,9 +860,13 @@
         }
 
         function onRecognitionError(event) {
-            // Ignore 'aborted' errors - this is normal iOS behavior when recognition is stopped
-            if (event.error === 'aborted') {
-                addDebugLog(`Recognition aborted (normal)`);
+            // Ignore 'aborted' and 'no-speech' errors - these are normal iOS behaviors
+            if (event.error === 'aborted' || event.error === 'no-speech') {
+                addDebugLog(`Recognition ${event.error} (normal)`);
+                isListening = false;
+                micButton.classList.remove('listening');
+                buttonLabel.textContent = 'Tap to speak';
+                updateStatus('Aguardando...');
                 return;
             }
             addDebugLog(`Recognition error: ${event.error}`);
@@ -993,11 +1019,13 @@
                     addDebugLog('Audio playback ended');
                     isPlaying = false;
                     isProcessing = false;
+                    isListening = false;
                     clearProcessingTimeout();
                     updateStatus('Aguardando...');
-                    micButton.classList.remove('processing');
+                    micButton.classList.remove('processing', 'listening');
                     buttonLabel.textContent = 'Tap to speak';
                     currentTranscript = '';
+                    sendButton.classList.remove('visible');
                     // Clean up blob URL
                     URL.revokeObjectURL(blobUrl);
                 };
@@ -1006,11 +1034,13 @@
                     addDebugLog(`Audio playback error: ${error}`);
                     isPlaying = false;
                     isProcessing = false;
+                    isListening = false;
                     clearProcessingTimeout();
                     updateStatus('Aguardando...');
-                    micButton.classList.remove('processing');
+                    micButton.classList.remove('processing', 'listening');
                     buttonLabel.textContent = 'Tap to speak';
                     currentTranscript = '';
+                    sendButton.classList.remove('visible');
                     URL.revokeObjectURL(blobUrl);
                 };
 
@@ -1021,11 +1051,13 @@
                         addDebugLog(`Play error: ${error.message}`);
                         isPlaying = false;
                         isProcessing = false;
+                        isListening = false;
                         clearProcessingTimeout();
                         updateStatus('Aguardando...');
-                        micButton.classList.remove('processing');
+                        micButton.classList.remove('processing', 'listening');
                         buttonLabel.textContent = 'Tap to speak';
                         currentTranscript = '';
+                        sendButton.classList.remove('visible');
                     });
                 }
             } catch (error) {
@@ -1061,19 +1093,7 @@
             }
         }
 
-        // Auto-detect language
-        recognition.addEventListener('result', (event) => {
-            if (event.isFinal && event.results.length > 0) {
-                const transcript = event.results[event.results.length - 1][0].transcript;
-                if (transcript.match(/[áàâãäéèêëíìîïóòôõöúùûüç]/i)) {
-                    recognition.lang = 'pt-BR';
-                } else if (transcript.match(/[áàâãäéèêëíìîïóòôõöúùûüñ]/i)) {
-                    recognition.lang = 'es-ES';
-                } else {
-                    recognition.lang = 'en-US';
-                }
-            }
-        }, { once: true });
+        // Note: Language auto-detection is now handled in onRecognitionResult
 
         addDebugLog('Jarvis initialized with ElevenLabs TTS and Settings');
     </script>
