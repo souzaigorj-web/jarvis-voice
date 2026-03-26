@@ -365,7 +365,7 @@
         const GEMINI_API_KEY = 'AIzaSyCyxFqPR0SICAG8k9KKAjOnbJY5DAJ-9b4';
         const GEMINI_MODEL = 'gemini-2.5-flash';
         const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-        const SYSTEM_PROMPT = "Você é Jarvis, assistente pessoal inteligente e direto. Responda sempre no idioma que o usuário falar. Seja conciso mas completo. Você é parceiro de vida do usuário, ajudando com marketing, tecnologia, saúde, treinos, nutrição, automações e qualquer ideia que ele tiver. Responda apenas em texto.";
+        const SYSTEM_PROMPT = "Você é Jarvis, assistente pessoal inteligente e direto. Responda sempre no idioma que o usuário falar. Seja conciso mas completo. Você é parceiro de vida do usuário, ajudando com marketing, tecnologia, saúde, treinos, nutrição, automações e qualquer ideia que ele tiver.";
 
         // DOM Elements
         const micButton = document.getElementById('micButton');
@@ -497,6 +497,11 @@
         }
 
         function onRecognitionError(event) {
+            // Ignore 'aborted' errors - this is normal iOS behavior when recognition is stopped
+            if (event.error === 'aborted') {
+                addDebugLog(`Recognition aborted (normal)`);
+                return;
+            }
             addDebugLog(`Recognition error: ${event.error}`);
             updateStatus(`Error: ${event.error}`);
             displayArea.innerHTML += `<div class="error">Error: ${event.error}</div>`;
@@ -648,6 +653,10 @@
                 utterance.onstart = () => {
                     addDebugLog('TTS started');
                     isSpeaking = true;
+                    // Stop listening while speaking
+                    if (isListening) {
+                        recognition.stop();
+                    }
                 };
 
                 utterance.onend = () => {
