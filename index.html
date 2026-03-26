@@ -102,12 +102,55 @@
             margin-right: 20px;
         }
 
+        .loading-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: rgba(0, 212, 255, 0.15);
+            border-left: 3px solid #00d4ff;
+            border-radius: 10px;
+            margin-right: 20px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-top: 2px solid #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            color: #00d4ff;
+            font-size: 0.95rem;
+        }
+
         .status {
             text-align: center;
             font-size: 0.85rem;
             color: #00d4ff;
             min-height: 20px;
             opacity: 0.8;
+        }
+
+        .error {
+            color: #ff6b6b;
+            padding: 12px 15px;
+            background: rgba(255, 107, 107, 0.1);
+            border-left: 3px solid #ff6b6b;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            animation: slideIn 0.3s ease-out;
         }
 
         .mic-container {
@@ -134,7 +177,7 @@
             position: relative;
         }
 
-        .mic-button:hover:not(.listening) {
+        .mic-button:hover:not(.listening):not(.processing) {
             transform: scale(1.05);
             box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
         }
@@ -143,6 +186,12 @@
             animation: pulse 1.5s infinite;
             background: linear-gradient(135deg, rgba(0, 212, 255, 0.4), rgba(0, 153, 255, 0.3));
             box-shadow: 0 0 40px rgba(0, 212, 255, 0.6);
+        }
+
+        .mic-button.processing {
+            animation: pulse 1.5s infinite;
+            background: linear-gradient(135deg, rgba(0, 153, 255, 0.4), rgba(0, 100, 200, 0.3));
+            box-shadow: 0 0 40px rgba(0, 153, 255, 0.6);
         }
 
         @keyframes pulse {
@@ -168,31 +217,6 @@
             text-align: center;
         }
 
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(0, 212, 255, 0.3);
-            border-top: 3px solid #00d4ff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .error {
-            color: #ff6b6b;
-            padding: 12px 15px;
-            background: rgba(255, 107, 107, 0.1);
-            border-left: 3px solid #ff6b6b;
-            border-radius: 5px;
-            font-size: 0.9rem;
-        }
-
         @media (max-width: 480px) {
             .header h1 {
                 font-size: 2rem;
@@ -210,7 +234,7 @@
                 padding: 15px;
             }
 
-            .user-message, .jarvis-message {
+            .user-message, .jarvis-message, .loading-indicator {
                 margin-left: 10px;
                 margin-right: 10px;
             }
@@ -240,8 +264,9 @@
 
     <script>
         // Configuration
-        const GEMINI_API_KEY = 'AIzaSyBU5erYV38IUmI0DNg37XaOaCXtMyiwoN8';
-        const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+        const GEMINI_API_KEY = 'AIzaSyCyxFqPR0SICAG8k9KKAjOnbJY5DAJ-9b4';
+        const GEMINI_MODEL = 'gemini-2.5-flash';
+        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
         const SYSTEM_PROMPT = "Você é Jarvis, assistente pessoal inteligente e direto. Responda sempre no idioma que o usuário falar. Seja conciso mas completo. Você é parceiro de vida do usuário, ajudando com marketing, tecnologia, saúde, treinos, nutrição, automações e qualquer ideia que ele tiver.";
 
         // DOM Elements
@@ -258,6 +283,7 @@
         recognition.lang = 'pt-BR';
 
         let isListening = false;
+        let isProcessing = false;
         let isSpeaking = false;
 
         // Initialize
@@ -270,7 +296,7 @@
         function toggleListening() {
             if (isListening) {
                 recognition.stop();
-            } else {
+            } else if (!isProcessing && !isSpeaking) {
                 displayArea.innerHTML = '<div class="status">Listening...</div>';
                 recognition.start();
             }
@@ -299,12 +325,17 @@
         function onRecognitionEnd() {
             isListening = false;
             micButton.classList.remove('listening');
-            buttonLabel.textContent = 'Tap to speak';
+            if (!isProcessing) {
+                buttonLabel.textContent = 'Tap to speak';
+            }
         }
 
         function onRecognitionError(event) {
             status.textContent = `Error: ${event.error}`;
             displayArea.innerHTML += `<div class="error">Error: ${event.error}</div>`;
+            isListening = false;
+            micButton.classList.remove('listening');
+            buttonLabel.textContent = 'Tap to speak';
         }
 
         async function handleUserInput(transcript) {
@@ -315,11 +346,22 @@
 
             // Display user message
             addMessage(transcript, 'user');
-            status.textContent = 'Processing...';
+            
+            // Show loading indicator
+            isProcessing = true;
+            micButton.classList.add('processing');
+            buttonLabel.textContent = 'Processando...';
+            addLoadingIndicator();
 
             try {
                 // Get response from Gemini
+                console.log('Sending request to Gemini API...');
                 const response = await getGeminiResponse(transcript);
+                console.log('Received response from Gemini:', response);
+                
+                // Remove loading indicator
+                removeLoadingIndicator();
+                
                 addMessage(response, 'jarvis');
                 status.textContent = 'Speaking...';
 
@@ -328,9 +370,14 @@
                 status.textContent = 'Ready to listen...';
             } catch (error) {
                 console.error('Error:', error);
+                removeLoadingIndicator();
                 const errorMsg = `Error: ${error.message}`;
                 addMessage(errorMsg, 'jarvis');
                 status.textContent = 'Error occurred. Try again.';
+            } finally {
+                isProcessing = false;
+                micButton.classList.remove('processing');
+                buttonLabel.textContent = 'Tap to speak';
             }
         }
 
@@ -348,7 +395,10 @@
                 ]
             };
 
-            const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+            console.log('API URL:', GEMINI_API_URL);
+            console.log('Payload:', JSON.stringify(payload, null, 2));
+
+            const response = await fetch(GEMINI_API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -356,15 +406,21 @@
                 body: JSON.stringify(payload)
             });
 
+            console.log('Response status:', response.status);
+            const data = await response.json();
+            console.log('Response data:', JSON.stringify(data, null, 2));
+
             if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
+                const errorMsg = data.error?.message || `API error: ${response.status}`;
+                throw new Error(errorMsg);
             }
 
-            const data = await response.json();
+            // Extract text from the correct path: candidates[0].content.parts[0].text
             const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
             if (!content) {
-                throw new Error('No response from API');
+                console.error('Could not extract text from response:', data);
+                throw new Error('No response text from API');
             }
 
             return content;
@@ -376,6 +432,22 @@
             messageDiv.textContent = text;
             displayArea.appendChild(messageDiv);
             displayArea.scrollTop = displayArea.scrollHeight;
+        }
+
+        function addLoadingIndicator() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-indicator';
+            loadingDiv.id = 'loadingIndicator';
+            loadingDiv.innerHTML = '<div class="spinner"></div><div class="loading-text">Processando...</div>';
+            displayArea.appendChild(loadingDiv);
+            displayArea.scrollTop = displayArea.scrollHeight;
+        }
+
+        function removeLoadingIndicator() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+            }
         }
 
         function speakResponse(text) {
