@@ -179,6 +179,27 @@
             background: rgba(0, 212, 255, 0.3);
         }
 
+        .reset-button {
+            padding: 8px 15px;
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid #ff6b6b;
+            border-radius: 8px;
+            color: #ff6b6b;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reset-button:hover {
+            background: rgba(255, 107, 107, 0.3);
+            transform: scale(1.05);
+        }
+
+        .reset-button:active {
+            transform: scale(0.95);
+        }
+
         .header h1 {
             font-size: 2.5rem;
             background: linear-gradient(135deg, #00d4ff, #0099ff);
@@ -361,6 +382,14 @@
             min-height: 20px;
         }
 
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
         .send-button {
             padding: 12px 30px;
             background: linear-gradient(135deg, #00d4ff, #0099ff);
@@ -518,6 +547,7 @@
             <button class="send-button" id="sendButton" title="Send message">
                 Enviar
             </button>
+            <button class="reset-button" id="resetButton" title="Reset app state">🔄 Reset</button>
         </div>
 
         <div class="status-line" id="statusLine">
@@ -557,6 +587,7 @@
         const elevenlabsKeyInput = document.getElementById('elevenlabsKeyInput');
         const geminiKeyIndicator = document.getElementById('geminiKeyIndicator');
         const elevenlabsKeyIndicator = document.getElementById('elevenlabsKeyIndicator');
+        const resetButton = document.getElementById('resetButton');
 
         // State variables
         let isListening = false;
@@ -565,6 +596,7 @@
         let currentTranscript = '';
         let debugLogs = [];
         let audioUnlocked = false;
+        let processingTimeout = null;
         
         // Global audio player for iOS Safari audio unlock
         const audioPlayer = new Audio();
@@ -660,6 +692,7 @@
                 closeSettings();
             }
         });
+        resetButton.addEventListener('click', resetAppState);
 
         micButton.addEventListener('click', (e) => {
             // Unlock audio on first tap for iOS Safari
@@ -681,6 +714,66 @@
         function updateStatus(status) {
             statusLine.textContent = status;
             addDebugLog(`Status: ${status}`);
+        }
+
+        function resetAppState() {
+            addDebugLog('Resetting app state...');
+            isListening = false;
+            isProcessing = false;
+            isPlaying = false;
+            currentTranscript = '';
+            
+            // Clear any pending timeouts
+            if (processingTimeout) {
+                clearTimeout(processingTimeout);
+                processingTimeout = null;
+            }
+            
+            // Reset UI
+            micButton.classList.remove('listening', 'processing');
+            sendButton.classList.remove('visible');
+            buttonLabel.textContent = 'Tap to speak';
+            updateStatus('Aguardando...');
+            
+            // Stop any ongoing audio
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.src = '';
+            }
+            
+            // Stop recognition if running
+            try {
+                recognition.stop();
+            } catch (e) {
+                // Ignore errors
+            }
+            
+            // Remove loading indicator if present
+            removeLoadingIndicator();
+            
+            addDebugLog('App state reset complete');
+        }
+
+        function setProcessingTimeout() {
+            // Clear any existing timeout
+            if (processingTimeout) {
+                clearTimeout(processingTimeout);
+            }
+            
+            // Set a 15-second timeout to auto-reset if processing takes too long
+            processingTimeout = setTimeout(() => {
+                if (isProcessing) {
+                    addDebugLog('Processing timeout - auto-resetting');
+                    resetAppState();
+                }
+            }, 15000);
+        }
+
+        function clearProcessingTimeout() {
+            if (processingTimeout) {
+                clearTimeout(processingTimeout);
+                processingTimeout = null;
+            }
         }
 
         function toggleListening() {
@@ -776,6 +869,7 @@
             addMessage(transcript, 'user');
             
             isProcessing = true;
+            setProcessingTimeout();
             micButton.classList.add('processing');
             buttonLabel.textContent = 'Processing...';
             updateStatus('Processando...');
@@ -792,19 +886,17 @@
                 // Get audio from ElevenLabs
                 addDebugLog('Calling ElevenLabs TTS API...');
                 await playAudioResponse(response);
-                
-                updateStatus('Aguardando...');
             } catch (error) {
                 addDebugLog(`Error: ${error.message}`);
                 removeLoadingIndicator();
                 const errorMsg = `Error: ${error.message}`;
                 addMessage(errorMsg, 'jarvis');
                 updateStatus(`Erro: ${error.message}`);
-            } finally {
                 isProcessing = false;
                 micButton.classList.remove('processing');
                 buttonLabel.textContent = 'Tap to speak';
                 currentTranscript = '';
+                clearProcessingTimeout();
             }
         }
 
@@ -900,7 +992,12 @@
                 audioPlayer.onended = () => {
                     addDebugLog('Audio playback ended');
                     isPlaying = false;
+                    isProcessing = false;
+                    clearProcessingTimeout();
                     updateStatus('Aguardando...');
+                    micButton.classList.remove('processing');
+                    buttonLabel.textContent = 'Tap to speak';
+                    currentTranscript = '';
                     // Clean up blob URL
                     URL.revokeObjectURL(blobUrl);
                 };
@@ -908,7 +1005,12 @@
                 audioPlayer.onerror = (error) => {
                     addDebugLog(`Audio playback error: ${error}`);
                     isPlaying = false;
+                    isProcessing = false;
+                    clearProcessingTimeout();
                     updateStatus('Aguardando...');
+                    micButton.classList.remove('processing');
+                    buttonLabel.textContent = 'Tap to speak';
+                    currentTranscript = '';
                     URL.revokeObjectURL(blobUrl);
                 };
 
@@ -918,12 +1020,19 @@
                     playPromise.catch(error => {
                         addDebugLog(`Play error: ${error.message}`);
                         isPlaying = false;
+                        isProcessing = false;
+                        clearProcessingTimeout();
                         updateStatus('Aguardando...');
+                        micButton.classList.remove('processing');
+                        buttonLabel.textContent = 'Tap to speak';
+                        currentTranscript = '';
                     });
                 }
             } catch (error) {
                 addDebugLog(`Error in playAudioResponse: ${error.message}`);
                 isPlaying = false;
+                isProcessing = false;
+                clearProcessingTimeout();
                 throw error;
             }
         }
