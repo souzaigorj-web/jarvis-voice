@@ -34,8 +34,149 @@
         }
 
         .header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
             margin-bottom: 10px;
+            position: relative;
+        }
+
+        .header-content {
+            flex: 1;
+            text-align: center;
+        }
+
+        .settings-button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #00d4ff;
+            cursor: pointer;
+            padding: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+        }
+
+        .settings-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .settings-button:active {
+            transform: scale(0.95);
+        }
+
+        .settings-panel {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-panel.open {
+            display: flex;
+        }
+
+        .settings-content {
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            border: 2px solid #00d4ff;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.3);
+        }
+
+        .settings-content h2 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .settings-group {
+            margin-bottom: 20px;
+        }
+
+        .settings-group label {
+            display: block;
+            color: #00d4ff;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .settings-group input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 50, 100, 0.5);
+            border: 1px solid #00d4ff;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 0.85rem;
+            font-family: 'Courier New', monospace;
+            box-sizing: border-box;
+        }
+
+        .settings-group input::placeholder {
+            color: rgba(224, 224, 224, 0.5);
+        }
+
+        .key-indicator {
+            font-size: 0.75rem;
+            color: #00ff00;
+            margin-top: 5px;
+        }
+
+        .key-indicator.hardcoded {
+            color: #ffaa00;
+        }
+
+        .settings-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .settings-save-btn, .settings-close-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .settings-save-btn {
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            color: #0a0e27;
+        }
+
+        .settings-save-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .settings-close-btn {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            border: 1px solid #00d4ff;
+        }
+
+        .settings-close-btn:hover {
+            background: rgba(0, 212, 255, 0.3);
         }
 
         .header h1 {
@@ -46,12 +187,14 @@
             background-clip: text;
             margin-bottom: 10px;
             text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            margin: 0;
         }
 
         .header p {
             font-size: 0.9rem;
             color: #00d4ff;
             opacity: 0.8;
+            margin: 0;
         }
 
         .display-area {
@@ -330,8 +473,34 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>JARVIS</h1>
-            <p>Your Personal AI Assistant</p>
+            <div class="header-content">
+                <h1>JARVIS</h1>
+                <p>Your Personal AI Assistant</p>
+            </div>
+            <button class="settings-button" id="settingsButton" title="Settings">⚙️</button>
+        </div>
+
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-content">
+                <h2>Settings</h2>
+                
+                <div class="settings-group">
+                    <label for="geminiKeyInput">Gemini API Key</label>
+                    <input type="password" id="geminiKeyInput" placeholder="Enter Gemini API key...">
+                    <div class="key-indicator" id="geminiKeyIndicator"></div>
+                </div>
+
+                <div class="settings-group">
+                    <label for="elevenlabsKeyInput">ElevenLabs API Key</label>
+                    <input type="password" id="elevenlabsKeyInput" placeholder="Enter ElevenLabs API key...">
+                    <div class="key-indicator" id="elevenlabsKeyIndicator"></div>
+                </div>
+
+                <div class="settings-buttons">
+                    <button class="settings-save-btn" id="settingsSaveBtn">Save</button>
+                    <button class="settings-close-btn" id="settingsCloseBtn">Close</button>
+                </div>
+            </div>
         </div>
 
         <div class="display-area" id="displayArea">
@@ -362,13 +531,16 @@
 
     <script>
         // Configuration
-        const GEMINI_API_KEY = 'AIzaSyCyxFqPR0SICAG8k9KKAjOnbJY5DAJ-9b4';
-        const GEMINI_MODEL = 'gemini-2.5-flash';
-        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-        const ELEVENLABS_API_KEY = 'sk_4c644f17c237701fccff3c0ad7faa743b7262b977cec4848';
+        const DEFAULT_GEMINI_API_KEY = 'AIzaSyBc-DB8lDZIXrWYQvciYh-Wh-5sPNpVUwc';
+        const DEFAULT_ELEVENLABS_API_KEY = 'sk_4c644f17c237701fccff3c0ad7faa743b7262b977cec4848';
         const ELEVENLABS_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL';
-        const ELEVENLABS_API_URL = `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`;
         const SYSTEM_PROMPT = "Você é Jarvis, assistente pessoal inteligente e direto do usuário. Responda sempre no idioma que o usuário falar. Seja conciso mas completo.";
+
+        // API keys - will be loaded from localStorage or use defaults
+        let GEMINI_API_KEY = DEFAULT_GEMINI_API_KEY;
+        let ELEVENLABS_API_KEY = DEFAULT_ELEVENLABS_API_KEY;
+        let GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        let ELEVENLABS_API_URL = `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`;
 
         // DOM Elements
         const micButton = document.getElementById('micButton');
@@ -377,6 +549,14 @@
         const buttonLabel = document.getElementById('buttonLabel');
         const sendButton = document.getElementById('sendButton');
         const debugLog = document.getElementById('debugLog');
+        const settingsButton = document.getElementById('settingsButton');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const settingsSaveBtn = document.getElementById('settingsSaveBtn');
+        const settingsCloseBtn = document.getElementById('settingsCloseBtn');
+        const geminiKeyInput = document.getElementById('geminiKeyInput');
+        const elevenlabsKeyInput = document.getElementById('elevenlabsKeyInput');
+        const geminiKeyIndicator = document.getElementById('geminiKeyIndicator');
+        const elevenlabsKeyIndicator = document.getElementById('elevenlabsKeyIndicator');
 
         // State variables
         let isListening = false;
@@ -406,6 +586,63 @@
             debugLog.scrollTop = debugLog.scrollHeight;
         }
 
+        // Load API keys from localStorage
+        function loadAPIKeys() {
+            const savedGeminiKey = localStorage.getItem('gemini_api_key');
+            const savedElevenlabsKey = localStorage.getItem('elevenlabs_api_key');
+            
+            if (savedGeminiKey) {
+                GEMINI_API_KEY = savedGeminiKey;
+                GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                addDebugLog('Gemini key loaded from localStorage');
+            }
+            if (savedElevenlabsKey) {
+                ELEVENLABS_API_KEY = savedElevenlabsKey;
+                addDebugLog('ElevenLabs key loaded from localStorage');
+            }
+            updateKeyIndicators();
+        }
+
+        function updateKeyIndicators() {
+            const geminiFromStorage = localStorage.getItem('gemini_api_key');
+            const elevenlabsFromStorage = localStorage.getItem('elevenlabs_api_key');
+            
+            geminiKeyIndicator.textContent = geminiFromStorage ? '✓ Custom key' : '⚠ Hardcoded key';
+            geminiKeyIndicator.className = geminiFromStorage ? 'key-indicator' : 'key-indicator hardcoded';
+            
+            elevenlabsKeyIndicator.textContent = elevenlabsFromStorage ? '✓ Custom key' : '⚠ Hardcoded key';
+            elevenlabsKeyIndicator.className = elevenlabsFromStorage ? 'key-indicator' : 'key-indicator hardcoded';
+        }
+
+        function openSettings() {
+            geminiKeyInput.value = localStorage.getItem('gemini_api_key') || '';
+            elevenlabsKeyInput.value = localStorage.getItem('elevenlabs_api_key') || '';
+            settingsPanel.classList.add('open');
+        }
+
+        function closeSettings() {
+            settingsPanel.classList.remove('open');
+        }
+
+        function saveSettings() {
+            const geminiKey = geminiKeyInput.value.trim();
+            const elevenlabsKey = elevenlabsKeyInput.value.trim();
+            
+            if (geminiKey) {
+                localStorage.setItem('gemini_api_key', geminiKey);
+                GEMINI_API_KEY = geminiKey;
+                GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                addDebugLog('Gemini API key saved');
+            }
+            if (elevenlabsKey) {
+                localStorage.setItem('elevenlabs_api_key', elevenlabsKey);
+                ELEVENLABS_API_KEY = elevenlabsKey;
+                addDebugLog('ElevenLabs API key saved');
+            }
+            updateKeyIndicators();
+            closeSettings();
+        }
+
         // Speech Recognition Setup
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
@@ -414,6 +651,16 @@
         recognition.lang = 'pt-BR';
 
         // Initialize
+        loadAPIKeys();
+        settingsButton.addEventListener('click', openSettings);
+        settingsSaveBtn.addEventListener('click', saveSettings);
+        settingsCloseBtn.addEventListener('click', closeSettings);
+        settingsPanel.addEventListener('click', (e) => {
+            if (e.target === settingsPanel) {
+                closeSettings();
+            }
+        });
+
         micButton.addEventListener('click', (e) => {
             // Unlock audio on first tap for iOS Safari
             if (!audioUnlocked) {
@@ -719,7 +966,7 @@
             }
         }, { once: true });
 
-        addDebugLog('Jarvis initialized with ElevenLabs TTS');
+        addDebugLog('Jarvis initialized with ElevenLabs TTS and Settings');
     </script>
 </body>
 </html>
