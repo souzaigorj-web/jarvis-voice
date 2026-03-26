@@ -358,6 +358,87 @@
             transform: scale(1.05);
         }
 
+        .permission-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            text-align: center;
+            min-height: 100vh;
+        }
+
+        .permission-screen.hidden {
+            display: none;
+        }
+
+        .permission-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 400px;
+        }
+
+        .permission-content h2 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+        }
+
+        .permission-content p {
+            font-size: 1rem;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+
+        .init-btn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            border: none;
+            border-radius: 8px;
+            color: #0a0e27;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .init-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+
+        .init-btn:active {
+            transform: scale(0.95);
+        }
+
+        .main-ui {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .main-ui.hidden {
+            display: none;
+        }
+
+        .error-message {
+            padding: 15px;
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid #ff6b6b;
+            border-radius: 8px;
+            color: #ff6b6b;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
         @media (max-width: 480px) {
             .header h1 {
                 font-size: 2rem;
@@ -383,6 +464,17 @@
     </style>
 </head>
 <body>
+    <div class="permission-screen" id="permissionScreen">
+        <div class="permission-content">
+            <h2>JARVIS</h2>
+            <p>Seu assistente pessoal inteligente</p>
+            <p style="font-size: 0.9rem; color: #00d4ff; opacity: 0.8;">Toque em Permitir Microfone para começar</p>
+            <button class="init-btn" id="initBtn">Permitir Microfone</button>
+            <div class="error-message hidden" id="errorMessage"></div>
+        </div>
+    </div>
+
+    <div class="main-ui hidden" id="mainUI">
     <div class="container">
         <div class="header">
             <div class="header-center">
@@ -430,6 +522,7 @@
             <div class="debug-entry">Initialized</div>
         </div>
     </div>
+    </div>
 
     <script>
         // ============================================================================
@@ -458,6 +551,10 @@
         // DOM ELEMENTS
         // ============================================================================
         const els = {
+            permissionScreen: document.getElementById('permissionScreen'),
+            initBtn: document.getElementById('initBtn'),
+            errorMessage: document.getElementById('errorMessage'),
+            mainUI: document.getElementById('mainUI'),
             settingsBtn: document.getElementById('settingsBtn'),
             settingsModal: document.getElementById('settingsModal'),
             geminiKeyInput: document.getElementById('geminiKeyInput'),
@@ -786,9 +883,53 @@
         }
 
         // ============================================================================
+        // MICROPHONE PERMISSION
+        // ============================================================================
+        async function requestMicPermission() {
+            try {
+                log('Requesting microphone permission...');
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+                log('Microphone permission granted');
+                return true;
+            } catch (err) {
+                log('Microphone permission denied: ' + err.message);
+                showError('Por favor, permita o acesso ao microfone nas configuracoes do Safari para usar o Jarvis.');
+                return false;
+            }
+        }
+
+        function showError(message) {
+            els.errorMessage.textContent = message;
+            els.errorMessage.classList.remove('hidden');
+        }
+
+        function hideError() {
+            els.errorMessage.classList.add('hidden');
+        }
+
+        function showMainUI() {
+            els.permissionScreen.classList.add('hidden');
+            els.mainUI.classList.remove('hidden');
+        }
+
+        els.initBtn.addEventListener('click', async () => {
+            els.initBtn.disabled = true;
+            els.initBtn.textContent = 'Aguardando...';
+            hideError();
+            const granted = await requestMicPermission();
+            if (granted) {
+                showMainUI();
+            } else {
+                els.initBtn.disabled = false;
+                els.initBtn.textContent = 'Permitir Microfone';
+            }
+        });
+
+        // ============================================================================
         // INIT
         // ============================================================================
-        log('Jarvis ready');
+        log('Jarvis initialized');
         updateUI();
     </script>
 </body>
