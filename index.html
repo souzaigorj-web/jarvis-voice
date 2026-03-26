@@ -384,7 +384,10 @@
         let isPlaying = false;
         let currentTranscript = '';
         let debugLogs = [];
-        let currentAudio = null;
+        let audioUnlocked = false;
+        
+        // Global audio player for iOS Safari audio unlock
+        const audioPlayer = new Audio();
 
         // Debug logging function
         function addDebugLog(message) {
@@ -411,7 +414,17 @@
         recognition.lang = 'pt-BR';
 
         // Initialize
-        micButton.addEventListener('click', toggleListening);
+        micButton.addEventListener('click', (e) => {
+            // Unlock audio on first tap for iOS Safari
+            if (!audioUnlocked) {
+                audioPlayer.play().catch(() => {
+                    addDebugLog('Audio unlock attempt (expected to fail on first tap)');
+                });
+                audioUnlocked = true;
+                addDebugLog('Audio context unlocked');
+            }
+            toggleListening();
+        });
         sendButton.addEventListener('click', sendTranscript);
         recognition.addEventListener('start', onRecognitionStart);
         recognition.addEventListener('result', onRecognitionResult);
@@ -550,12 +563,19 @@
 
         async function getGeminiResponse(userMessage) {
             const payload = {
+                system_instruction: {
+                    parts: [
+                        {
+                            text: SYSTEM_PROMPT
+                        }
+                    ]
+                },
                 contents: [
                     {
                         role: 'user',
                         parts: [
                             {
-                                text: `${SYSTEM_PROMPT}\n\nUser: ${userMessage}`
+                                text: userMessage
                             }
                         ]
                     }
@@ -588,12 +608,6 @@
 
         async function playAudioResponse(text) {
             try {
-                // Stop any currently playing audio
-                if (currentAudio) {
-                    currentAudio.pause();
-                    currentAudio = null;
-                }
-
                 addDebugLog('Requesting audio from ElevenLabs...');
                 
                 const payload = {
@@ -629,13 +643,14 @@
                 const blobUrl = URL.createObjectURL(audioBlob);
                 addDebugLog(`Blob URL created: ${blobUrl.substring(0, 50)}...`);
 
-                // Create and play audio
-                currentAudio = new Audio(blobUrl);
+                // Use global audio player for iOS Safari compatibility
+                audioPlayer.src = blobUrl;
                 isPlaying = true;
                 updateStatus('Respondendo...');
-                addDebugLog('Starting audio playback');
+                addDebugLog('Starting audio playback with global player');
 
-                currentAudio.onended = () => {
+                // Set up event handlers
+                audioPlayer.onended = () => {
                     addDebugLog('Audio playback ended');
                     isPlaying = false;
                     updateStatus('Aguardando...');
@@ -643,14 +658,22 @@
                     URL.revokeObjectURL(blobUrl);
                 };
 
-                currentAudio.onerror = (error) => {
+                audioPlayer.onerror = (error) => {
                     addDebugLog(`Audio playback error: ${error}`);
                     isPlaying = false;
                     updateStatus('Aguardando...');
                     URL.revokeObjectURL(blobUrl);
                 };
 
-                currentAudio.play();
+                // Play the audio
+                const playPromise = audioPlayer.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        addDebugLog(`Play error: ${error.message}`);
+                        isPlaying = false;
+                        updateStatus('Aguardando...');
+                    });
+                }
             } catch (error) {
                 addDebugLog(`Error in playAudioResponse: ${error.message}`);
                 isPlaying = false;
