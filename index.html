@@ -12,7 +12,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
             color: #e0e0e0;
             min-height: 100vh;
@@ -38,37 +38,50 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
-            margin-bottom: 10px;
+            text-align: center;
             position: relative;
         }
 
-        .header-content {
+        .header-center {
             flex: 1;
-            text-align: center;
         }
 
-        .settings-button {
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 5px 0;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            font-size: 0.85rem;
+            color: #00d4ff;
+            opacity: 0.8;
+            margin: 0;
+        }
+
+        .settings-btn {
             background: none;
             border: none;
             font-size: 1.5rem;
             color: #00d4ff;
             cursor: pointer;
-            padding: 10px;
+            padding: 8px;
             transition: all 0.3s ease;
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
             border-radius: 8px;
         }
 
-        .settings-button:hover {
+        .settings-btn:hover {
             transform: scale(1.1);
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
         }
 
-        .settings-button:active {
-            transform: scale(0.95);
-        }
-
-        .settings-panel {
+        .settings-modal {
             display: none;
             position: fixed;
             top: 0;
@@ -81,7 +94,7 @@
             justify-content: center;
         }
 
-        .settings-panel.open {
+        .settings-modal.open {
             display: flex;
         }
 
@@ -92,15 +105,13 @@
             padding: 30px;
             max-width: 400px;
             width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
             box-shadow: 0 0 40px rgba(0, 212, 255, 0.3);
         }
 
         .settings-content h2 {
             color: #00d4ff;
             margin-bottom: 20px;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             text-align: center;
         }
 
@@ -113,7 +124,7 @@
             color: #00d4ff;
             font-size: 0.9rem;
             margin-bottom: 8px;
-            font-weight: bold;
+            font-weight: 600;
         }
 
         .settings-group input {
@@ -128,17 +139,17 @@
             box-sizing: border-box;
         }
 
-        .settings-group input::placeholder {
-            color: rgba(224, 224, 224, 0.5);
-        }
-
-        .key-indicator {
+        .key-status {
             font-size: 0.75rem;
             color: #00ff00;
             margin-top: 5px;
         }
 
-        .key-indicator.hardcoded {
+        .key-status.custom {
+            color: #00ff00;
+        }
+
+        .key-status.default {
             color: #ffaa00;
         }
 
@@ -148,74 +159,35 @@
             margin-top: 20px;
         }
 
-        .settings-save-btn, .settings-close-btn {
+        .settings-buttons button {
             flex: 1;
             padding: 12px;
             border: none;
             border-radius: 8px;
             font-size: 0.9rem;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
         }
 
-        .settings-save-btn {
+        .btn-save {
             background: linear-gradient(135deg, #00d4ff, #0099ff);
             color: #0a0e27;
         }
 
-        .settings-save-btn:hover {
+        .btn-save:hover {
             transform: scale(1.05);
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
         }
 
-        .settings-close-btn {
+        .btn-close {
             background: rgba(0, 212, 255, 0.2);
             color: #00d4ff;
             border: 1px solid #00d4ff;
         }
 
-        .settings-close-btn:hover {
+        .btn-close:hover {
             background: rgba(0, 212, 255, 0.3);
-        }
-
-        .reset-button {
-            padding: 8px 15px;
-            background: rgba(255, 107, 107, 0.2);
-            border: 1px solid #ff6b6b;
-            border-radius: 8px;
-            color: #ff6b6b;
-            font-size: 0.9rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .reset-button:hover {
-            background: rgba(255, 107, 107, 0.3);
-            transform: scale(1.05);
-        }
-
-        .reset-button:active {
-            transform: scale(0.95);
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, #00d4ff, #0099ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-            margin: 0;
-        }
-
-        .header p {
-            font-size: 0.9rem;
-            color: #00d4ff;
-            opacity: 0.8;
-            margin: 0;
         }
 
         .display-area {
@@ -224,13 +196,10 @@
             border: 2px solid #00d4ff;
             border-radius: 15px;
             padding: 20px;
-            min-height: 200px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 20px rgba(0, 212, 255, 0.1);
-            overflow-y: auto;
+            min-height: 180px;
             max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 20px rgba(0, 212, 255, 0.1);
         }
 
         .message {
@@ -238,6 +207,7 @@
             border-radius: 10px;
             font-size: 0.95rem;
             line-height: 1.5;
+            margin-bottom: 10px;
             animation: slideIn 0.3s ease-out;
             word-wrap: break-word;
         }
@@ -253,65 +223,19 @@
             }
         }
 
-        .user-message {
+        .msg-user {
             background: rgba(0, 153, 255, 0.2);
             border-left: 3px solid #0099ff;
-            text-align: left;
             margin-left: 20px;
         }
 
-        .jarvis-message {
+        .msg-jarvis {
             background: rgba(0, 212, 255, 0.15);
             border-left: 3px solid #00d4ff;
-            text-align: left;
             margin-right: 20px;
         }
 
-        .loading-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            padding: 30px 20px;
-            background: rgba(0, 212, 255, 0.1);
-            border-radius: 15px;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(0, 212, 255, 0.3);
-            border-top: 4px solid #00d4ff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .loading-text {
-            color: #00d4ff;
-            font-size: 1.2rem;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .error {
-            color: #ff6b6b;
-            padding: 12px 15px;
-            background: rgba(255, 107, 107, 0.1);
-            border-left: 3px solid #ff6b6b;
-            border-radius: 5px;
-            font-size: 0.9rem;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        .controls-section {
+        .controls {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -319,14 +243,14 @@
             width: 100%;
         }
 
-        .mic-button-container {
+        .mic-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 10px;
         }
 
-        .mic-button {
+        .mic-btn {
             width: 120px;
             height: 120px;
             border-radius: 50%;
@@ -339,77 +263,47 @@
             font-size: 3rem;
             transition: all 0.3s ease;
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-            position: relative;
         }
 
-        .mic-button:hover:not(.listening):not(.processing) {
+        .mic-btn:hover:not(.listening):not(.processing) {
             transform: scale(1.05);
             box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
         }
 
-        .mic-button.listening {
+        .mic-btn.listening {
             animation: pulse 1.5s infinite;
             background: linear-gradient(135deg, rgba(0, 212, 255, 0.4), rgba(0, 153, 255, 0.3));
             box-shadow: 0 0 40px rgba(0, 212, 255, 0.6);
         }
 
-        .mic-button.processing {
+        .mic-btn.processing {
             animation: pulse 1.5s infinite;
             background: linear-gradient(135deg, rgba(0, 153, 255, 0.4), rgba(0, 100, 200, 0.3));
             box-shadow: 0 0 40px rgba(0, 153, 255, 0.6);
         }
 
         @keyframes pulse {
-            0% {
+            0%, 100% {
                 box-shadow: 0 0 20px rgba(0, 212, 255, 0.4), 0 0 40px rgba(0, 212, 255, 0.2);
             }
             50% {
                 box-shadow: 0 0 40px rgba(0, 212, 255, 0.6), 0 0 80px rgba(0, 212, 255, 0.3);
             }
-            100% {
-                box-shadow: 0 0 20px rgba(0, 212, 255, 0.4), 0 0 40px rgba(0, 212, 255, 0.2);
-            }
         }
 
-        .mic-button:active {
+        .mic-btn:active {
             transform: scale(0.95);
         }
 
-        .button-label {
+        .mic-label {
             font-size: 0.85rem;
             color: #00d4ff;
             text-align: center;
             min-height: 20px;
+            max-width: 150px;
         }
 
-        .send-button {
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #00d4ff, #0099ff);
-            border: none;
-            border-radius: 8px;
-            color: #0a0e27;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-            display: none;
-        }
-
-        .send-button.visible {
-            display: block;
-        }
-
-        .send-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
-        }
-
-        .send-button:active {
-            transform: scale(0.95);
-        }
-
-        .status-line {
+        .status-bar {
             width: 100%;
             text-align: center;
             font-size: 0.9rem;
@@ -417,11 +311,11 @@
             padding: 10px;
             background: rgba(0, 212, 255, 0.1);
             border-radius: 8px;
+            font-weight: 600;
             min-height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
         }
 
         .debug-log {
@@ -430,21 +324,38 @@
             border: 1px solid rgba(0, 212, 255, 0.3);
             border-radius: 8px;
             padding: 10px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #00ff00;
             font-family: 'Courier New', monospace;
-            max-height: 120px;
+            max-height: 100px;
             overflow-y: auto;
             line-height: 1.3;
         }
 
-        .debug-log-entry {
+        .debug-entry {
             padding: 2px 0;
             border-bottom: 1px solid rgba(0, 212, 255, 0.1);
         }
 
-        .debug-log-entry:last-child {
+        .debug-entry:last-child {
             border-bottom: none;
+        }
+
+        .reset-btn {
+            padding: 8px 16px;
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid #ff6b6b;
+            border-radius: 8px;
+            color: #ff6b6b;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 107, 107, 0.3);
+            transform: scale(1.05);
         }
 
         @media (max-width: 480px) {
@@ -452,41 +363,21 @@
                 font-size: 2rem;
             }
 
-            .mic-button {
+            .mic-btn {
                 width: 100px;
                 height: 100px;
                 font-size: 2.5rem;
             }
 
             .display-area {
-                min-height: 180px;
+                min-height: 150px;
                 max-height: 250px;
                 padding: 15px;
             }
 
-            .user-message, .jarvis-message {
-                margin-left: 10px;
-                margin-right: 10px;
-            }
-
-            .loading-container {
-                padding: 20px 15px;
-            }
-
-            .spinner {
-                width: 35px;
-                height: 35px;
-                border: 3px solid rgba(0, 212, 255, 0.3);
-                border-top: 3px solid #00d4ff;
-            }
-
-            .loading-text {
-                font-size: 1rem;
-            }
-
             .debug-log {
                 font-size: 0.65rem;
-                max-height: 100px;
+                max-height: 80px;
             }
         }
     </style>
@@ -494,637 +385,411 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="header-content">
+            <div class="header-center">
                 <h1>JARVIS</h1>
-                <p>Your Personal AI Assistant</p>
+                <p>Voice Assistant</p>
             </div>
-            <button class="settings-button" id="settingsButton" title="Settings">⚙️</button>
+            <button class="settings-btn" id="settingsBtn">⚙️</button>
         </div>
 
-        <div class="settings-panel" id="settingsPanel">
+        <div class="settings-modal" id="settingsModal">
             <div class="settings-content">
                 <h2>Settings</h2>
-                
                 <div class="settings-group">
                     <label for="geminiKeyInput">Gemini API Key</label>
                     <input type="password" id="geminiKeyInput" placeholder="Enter Gemini API key...">
-                    <div class="key-indicator" id="geminiKeyIndicator"></div>
+                    <div class="key-status" id="geminiStatus"></div>
                 </div>
-
                 <div class="settings-group">
                     <label for="elevenlabsKeyInput">ElevenLabs API Key</label>
                     <input type="password" id="elevenlabsKeyInput" placeholder="Enter ElevenLabs API key...">
-                    <div class="key-indicator" id="elevenlabsKeyIndicator"></div>
+                    <div class="key-status" id="elevenlabsStatus"></div>
                 </div>
-
                 <div class="settings-buttons">
-                    <button class="settings-save-btn" id="settingsSaveBtn">Save</button>
-                    <button class="settings-close-btn" id="settingsCloseBtn">Close</button>
+                    <button class="btn-save" id="saveBtn">Save</button>
+                    <button class="btn-close" id="closeBtn">Close</button>
                 </div>
             </div>
         </div>
 
         <div class="display-area" id="displayArea">
-            <div class="message jarvis-message">Ready to listen...</div>
+            <div class="message msg-jarvis">Ready to listen...</div>
         </div>
 
-        <div class="controls-section">
-            <div class="mic-button-container">
-                <button class="mic-button" id="micButton" title="Tap to speak">
-                    🎤
-                </button>
-                <div class="button-label" id="buttonLabel">Tap to speak</div>
+        <div class="controls">
+            <div class="mic-container">
+                <button class="mic-btn" id="micBtn">🎤</button>
+                <div class="mic-label" id="micLabel">Tap to speak</div>
             </div>
-
-            <button class="send-button" id="sendButton" title="Send message">
-                Enviar
-            </button>
-            <button class="reset-button" id="resetButton" title="Reset app state">🔄 Reset</button>
+            <button class="reset-btn" id="resetBtn">🔄 Reset</button>
         </div>
 
-        <div class="status-line" id="statusLine">
-            Aguardando...
-        </div>
+        <div class="status-bar" id="statusBar">Aguardando...</div>
 
         <div class="debug-log" id="debugLog">
-            <div class="debug-log-entry">Debug log initialized</div>
+            <div class="debug-entry">Initialized</div>
         </div>
     </div>
 
     <script>
-        // Configuration
-        const DEFAULT_GEMINI_API_KEY = 'AIzaSyBc-DB8lDZIXrWYQvciYh-Wh-5sPNpVUwc';
-        const DEFAULT_ELEVENLABS_API_KEY = 'sk_4c644f17c237701fccff3c0ad7faa743b7262b977cec4848';
-        const ELEVENLABS_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL';
-        const SYSTEM_PROMPT = "Você é Jarvis, assistente pessoal inteligente e direto do usuário. Responda sempre no idioma que o usuário falar. Seja conciso mas completo.";
+        // ============================================================================
+        // CONFIGURATION
+        // ============================================================================
+        const CONFIG = {
+            DEFAULT_GEMINI_KEY: 'AIzaSyBc-DB8lDZIXrWYQvciYh-Wh-5sPNpVUwc',
+            DEFAULT_ELEVENLABS_KEY: 'sk_4c644f17c237701fccff3c0ad7faa743b7262b977cec4848',
+            ELEVENLABS_VOICE_ID: 'EXAVITQu4vr4xnSDxMaL',
+            SYSTEM_PROMPT: "Você é Jarvis, assistente pessoal inteligente e direto. Responda sempre no idioma que o usuário falar. Seja conciso e direto. Você ajuda com marketing, tecnologia, saúde, treinos, nutrição, automações e qualquer ideia.",
+            SAFETY_TIMEOUT: 20000 // 20 seconds
+        };
 
-        // API keys - will be loaded from localStorage or use defaults
-        let GEMINI_API_KEY = DEFAULT_GEMINI_API_KEY;
-        let ELEVENLABS_API_KEY = DEFAULT_ELEVENLABS_API_KEY;
-        let GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-        let ELEVENLABS_API_URL = `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`;
-
-        // DOM Elements
-        const micButton = document.getElementById('micButton');
-        const displayArea = document.getElementById('displayArea');
-        const statusLine = document.getElementById('statusLine');
-        const buttonLabel = document.getElementById('buttonLabel');
-        const sendButton = document.getElementById('sendButton');
-        const debugLog = document.getElementById('debugLog');
-        const settingsButton = document.getElementById('settingsButton');
-        const settingsPanel = document.getElementById('settingsPanel');
-        const settingsSaveBtn = document.getElementById('settingsSaveBtn');
-        const settingsCloseBtn = document.getElementById('settingsCloseBtn');
-        const geminiKeyInput = document.getElementById('geminiKeyInput');
-        const elevenlabsKeyInput = document.getElementById('elevenlabsKeyInput');
-        const geminiKeyIndicator = document.getElementById('geminiKeyIndicator');
-        const elevenlabsKeyIndicator = document.getElementById('elevenlabsKeyIndicator');
-        const resetButton = document.getElementById('resetButton');
-
-        // UNIFIED STATE MACHINE
-        let appState = 'idle'; // 'idle', 'listening', 'processing', 'speaking'
-        let currentTranscript = '';
+        // ============================================================================
+        // STATE & STORAGE
+        // ============================================================================
+        let appState = 'idle'; // idle | listening | processing | speaking
+        let apiKeys = {
+            gemini: localStorage.getItem('gemini_key') || CONFIG.DEFAULT_GEMINI_KEY,
+            elevenlabs: localStorage.getItem('elevenlabs_key') || CONFIG.DEFAULT_ELEVENLABS_KEY
+        };
         let debugLogs = [];
-        let audioUnlocked = false;
-        let processingTimeout = null;
-        
-        // Global audio player for iOS Safari audio unlock
-        const audioPlayer = new Audio();
+        let safetyTimeout = null;
 
-        // Debug logging function
-        function addDebugLog(message) {
-            const timestamp = new Date().toLocaleTimeString();
-            const entry = `[${timestamp}] ${message}`;
+        // ============================================================================
+        // DOM ELEMENTS
+        // ============================================================================
+        const els = {
+            settingsBtn: document.getElementById('settingsBtn'),
+            settingsModal: document.getElementById('settingsModal'),
+            geminiKeyInput: document.getElementById('geminiKeyInput'),
+            elevenlabsKeyInput: document.getElementById('elevenlabsKeyInput'),
+            geminiStatus: document.getElementById('geminiStatus'),
+            elevenlabsStatus: document.getElementById('elevenlabsStatus'),
+            saveBtn: document.getElementById('saveBtn'),
+            closeBtn: document.getElementById('closeBtn'),
+            displayArea: document.getElementById('displayArea'),
+            micBtn: document.getElementById('micBtn'),
+            micLabel: document.getElementById('micLabel'),
+            statusBar: document.getElementById('statusBar'),
+            debugLog: document.getElementById('debugLog'),
+            resetBtn: document.getElementById('resetBtn')
+        };
+
+        // ============================================================================
+        // DEBUG LOGGING
+        // ============================================================================
+        function log(msg) {
+            const time = new Date().toLocaleTimeString();
+            const entry = `[${time}] ${msg}`;
             debugLogs.push(entry);
-            if (debugLogs.length > 5) {
-                debugLogs.shift();
-            }
-            updateDebugDisplay();
+            if (debugLogs.length > 5) debugLogs.shift();
+            els.debugLog.innerHTML = debugLogs.map(l => `<div class="debug-entry">${l}</div>`).join('');
+            els.debugLog.scrollTop = els.debugLog.scrollHeight;
             console.log(entry);
         }
 
-        function updateDebugDisplay() {
-            debugLog.innerHTML = debugLogs.map(log => `<div class="debug-log-entry">${log}</div>`).join('');
-            debugLog.scrollTop = debugLog.scrollHeight;
-        }
-
-        // Load API keys from localStorage
-        function loadAPIKeys() {
-            const savedGeminiKey = localStorage.getItem('gemini_api_key');
-            const savedElevenlabsKey = localStorage.getItem('elevenlabs_api_key');
-            
-            if (savedGeminiKey) {
-                GEMINI_API_KEY = savedGeminiKey;
-                GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-                addDebugLog('Gemini key loaded from localStorage');
+        // ============================================================================
+        // STATE MANAGEMENT
+        // ============================================================================
+        function setState(newState) {
+            if (appState !== newState) {
+                log(`State: ${appState} → ${newState}`);
+                appState = newState;
+                updateUI();
             }
-            if (savedElevenlabsKey) {
-                ELEVENLABS_API_KEY = savedElevenlabsKey;
-                addDebugLog('ElevenLabs key loaded from localStorage');
-            }
-            updateKeyIndicators();
         }
 
-        function updateKeyIndicators() {
-            const geminiFromStorage = localStorage.getItem('gemini_api_key');
-            const elevenlabsFromStorage = localStorage.getItem('elevenlabs_api_key');
+        function updateUI() {
+            els.statusBar.textContent = {
+                'idle': 'Aguardando...',
+                'listening': 'Ouvindo...',
+                'processing': 'Processando...',
+                'speaking': 'Respondendo...'
+            }[appState];
+
+            els.micBtn.classList.toggle('listening', appState === 'listening');
+            els.micBtn.classList.toggle('processing', appState === 'processing' || appState === 'speaking');
+        }
+
+        // ============================================================================
+        // SETTINGS
+        // ============================================================================
+        function updateKeyStatuses() {
+            const geminiCustom = localStorage.getItem('gemini_key');
+            const elevenlabsCustom = localStorage.getItem('elevenlabs_key');
             
-            geminiKeyIndicator.textContent = geminiFromStorage ? '✓ Custom key' : '⚠ Hardcoded key';
-            geminiKeyIndicator.className = geminiFromStorage ? 'key-indicator' : 'key-indicator hardcoded';
+            els.geminiStatus.textContent = geminiCustom ? '✓ Custom' : '⚠ Default';
+            els.geminiStatus.className = geminiCustom ? 'key-status custom' : 'key-status default';
             
-            elevenlabsKeyIndicator.textContent = elevenlabsFromStorage ? '✓ Custom key' : '⚠ Hardcoded key';
-            elevenlabsKeyIndicator.className = elevenlabsFromStorage ? 'key-indicator' : 'key-indicator hardcoded';
+            els.elevenlabsStatus.textContent = elevenlabsCustom ? '✓ Custom' : '⚠ Default';
+            els.elevenlabsStatus.className = elevenlabsCustom ? 'key-status custom' : 'key-status default';
         }
 
-        function openSettings() {
-            geminiKeyInput.value = localStorage.getItem('gemini_api_key') || '';
-            elevenlabsKeyInput.value = localStorage.getItem('elevenlabs_api_key') || '';
-            settingsPanel.classList.add('open');
-        }
+        els.settingsBtn.addEventListener('click', () => {
+            els.geminiKeyInput.value = localStorage.getItem('gemini_key') || '';
+            els.elevenlabsKeyInput.value = localStorage.getItem('elevenlabs_key') || '';
+            els.settingsModal.classList.add('open');
+        });
 
-        function closeSettings() {
-            settingsPanel.classList.remove('open');
-        }
+        els.closeBtn.addEventListener('click', () => {
+            els.settingsModal.classList.remove('open');
+        });
 
-        function saveSettings() {
-            const geminiKey = geminiKeyInput.value.trim();
-            const elevenlabsKey = elevenlabsKeyInput.value.trim();
+        els.saveBtn.addEventListener('click', () => {
+            const geminiKey = els.geminiKeyInput.value.trim();
+            const elevenlabsKey = els.elevenlabsKeyInput.value.trim();
             
             if (geminiKey) {
-                localStorage.setItem('gemini_api_key', geminiKey);
-                GEMINI_API_KEY = geminiKey;
-                GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-                addDebugLog('Gemini API key saved');
+                localStorage.setItem('gemini_key', geminiKey);
+                apiKeys.gemini = geminiKey;
+                log('Gemini key saved');
             }
             if (elevenlabsKey) {
-                localStorage.setItem('elevenlabs_api_key', elevenlabsKey);
-                ELEVENLABS_API_KEY = elevenlabsKey;
-                addDebugLog('ElevenLabs API key saved');
+                localStorage.setItem('elevenlabs_key', elevenlabsKey);
+                apiKeys.elevenlabs = elevenlabsKey;
+                log('ElevenLabs key saved');
             }
-            updateKeyIndicators();
-            closeSettings();
+            updateKeyStatuses();
+            els.settingsModal.classList.remove('open');
+        });
+
+        els.settingsModal.addEventListener('click', (e) => {
+            if (e.target === els.settingsModal) {
+                els.settingsModal.classList.remove('open');
+            }
+        });
+
+        updateKeyStatuses();
+
+        // ============================================================================
+        // SAFETY TIMEOUT
+        // ============================================================================
+        function setSafetyTimeout() {
+            clearSafetyTimeout();
+            safetyTimeout = setTimeout(() => {
+                if (appState !== 'idle') {
+                    log('⚠️ Safety timeout triggered');
+                    resetApp();
+                }
+            }, CONFIG.SAFETY_TIMEOUT);
         }
 
-        // Speech Recognition Setup
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition = null;
+        function clearSafetyTimeout() {
+            if (safetyTimeout) {
+                clearTimeout(safetyTimeout);
+                safetyTimeout = null;
+            }
+        }
 
-        function createNewRecognition() {
-            addDebugLog('Creating new SpeechRecognition instance');
-            recognition = new SpeechRecognition();
+        // ============================================================================
+        // RESET
+        // ============================================================================
+        function resetApp() {
+            log('=== RESET ===');
+            setState('idle');
+            clearSafetyTimeout();
+            els.micLabel.textContent = 'Tap to speak';
+        }
+
+        els.resetBtn.addEventListener('click', resetApp);
+
+        // ============================================================================
+        // SPEECH RECOGNITION
+        // ============================================================================
+        function startListening() {
+            if (appState !== 'idle') return;
+            
+            setState('listening');
+            let transcript = '';
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'pt-BR';
             recognition.continuous = false;
             recognition.interimResults = true;
-            recognition.lang = 'pt-BR';
-            
-            // Attach event handlers to the new instance
-            recognition.addEventListener('start', onRecognitionStart);
-            recognition.addEventListener('result', onRecognitionResult);
-            recognition.addEventListener('end', onRecognitionEnd);
-            recognition.addEventListener('error', onRecognitionError);
-        }
 
-        // Create the first instance
-        createNewRecognition();
-
-        // Initialize
-        loadAPIKeys();
-        settingsButton.addEventListener('click', openSettings);
-        settingsSaveBtn.addEventListener('click', saveSettings);
-        settingsCloseBtn.addEventListener('click', closeSettings);
-        settingsPanel.addEventListener('click', (e) => {
-            if (e.target === settingsPanel) {
-                closeSettings();
-            }
-        });
-        resetButton.addEventListener('click', resetAppState);
-
-        micButton.addEventListener('click', (e) => {
-            addDebugLog(`Mic button tapped. Current state: ${appState}`);
-            
-            // Unlock audio on first tap for iOS Safari
-            if (!audioUnlocked) {
-                audioPlayer.play().catch(() => {
-                    addDebugLog('Audio unlock attempt (expected to fail on first tap)');
-                });
-                audioUnlocked = true;
-                addDebugLog('Audio context unlocked');
-            }
-            
-            // Only start listening if in idle state
-            if (appState === 'idle') {
-                startListening();
-            } else if (appState === 'listening') {
-                stopListening();
-            } else {
-                addDebugLog(`Cannot start listening. Current state: ${appState}`);
-            }
-        });
-        
-        sendButton.addEventListener('click', sendTranscript);
-
-        function updateStatus(status) {
-            statusLine.textContent = status;
-            addDebugLog(`Status: ${status}`);
-        }
-
-        function resetAppState() {
-            addDebugLog('=== FORCE RESET INITIATED ===');
-            addDebugLog(`State before reset: ${appState}`);
-            
-            appState = 'idle';
-            currentTranscript = '';
-            
-            // Clear any pending timeouts
-            if (processingTimeout) {
-                clearTimeout(processingTimeout);
-                processingTimeout = null;
-            }
-            
-            // Reset UI
-            micButton.classList.remove('listening', 'processing');
-            sendButton.classList.remove('visible');
-            buttonLabel.textContent = 'Tap to speak';
-            updateStatus('Aguardando...');
-            
-            // Stop any ongoing audio
-            if (audioPlayer) {
-                audioPlayer.pause();
-                audioPlayer.src = '';
-            }
-            
-            // Stop recognition if running
-            try {
-                recognition.stop();
-            } catch (e) {
-                addDebugLog(`Error stopping recognition: ${e.message}`);
-            }
-            
-            // Remove loading indicator if present
-            removeLoadingIndicator();
-            
-            addDebugLog('=== RESET COMPLETE. State is now: idle ===');
-        }
-
-        function setProcessingTimeout() {
-            if (processingTimeout) {
-                clearTimeout(processingTimeout);
-            }
-            
-            processingTimeout = setTimeout(() => {
-                addDebugLog('⚠️ PROCESSING TIMEOUT - Auto-resetting');
-                resetAppState();
-            }, 15000);
-        }
-
-        function clearProcessingTimeout() {
-            if (processingTimeout) {
-                clearTimeout(processingTimeout);
-                processingTimeout = null;
-            }
-        }
-
-        function startListening() {
-            addDebugLog('>>> STARTING LISTENING <<<');
-            appState = 'listening';
-            currentTranscript = '';
-            sendButton.classList.remove('visible');
-            
-            // Create a fresh recognition instance for this session
-            createNewRecognition();
-            
-            try {
-                recognition.start();
-                addDebugLog('recognition.start() called');
-            } catch (e) {
-                addDebugLog(`Error calling recognition.start(): ${e.message}`);
-                appState = 'idle';
-            }
-        }
-
-        function stopListening() {
-            addDebugLog('>>> STOPPING LISTENING <<<');
-            try {
-                recognition.stop();
-                addDebugLog('recognition.stop() called');
-            } catch (e) {
-                addDebugLog(`Error calling recognition.stop(): ${e.message}`);
-            }
-        }
-
-        function onRecognitionStart() {
-            addDebugLog('✓ onRecognitionStart fired');
-            micButton.classList.add('listening');
-            buttonLabel.textContent = 'Listening...';
-            updateStatus('Ouvindo...');
-        }
-
-        function onRecognitionResult(event) {
-            addDebugLog(`onRecognitionResult: ${event.results.length} results`);
-            let interimTranscript = '';
-            
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                const transcript = event.results[i][0].transcript;
-                const confidence = event.results[i][0].confidence;
-                
-                if (event.results[i].isFinal) {
-                    currentTranscript += transcript;
-                    addDebugLog(`✓ FINAL: "${transcript}" (confidence: ${(confidence * 100).toFixed(0)}%)`);
-                    
-                    // Auto-detect language from transcript
-                    if (transcript.match(/[áàâãäéèêëíìîïóòôõöúùûüç]/i)) {
-                        recognition.lang = 'pt-BR';
-                    } else if (transcript.match(/[áàâãäéèêëíìîïóòôõöúùûüñ]/i)) {
-                        recognition.lang = 'es-ES';
-                    } else {
-                        recognition.lang = 'en-US';
-                    }
-                } else {
-                    interimTranscript += transcript;
-                }
-            }
-
-            if (interimTranscript) {
-                buttonLabel.textContent = `Heard: "${interimTranscript}"`;
-            }
-        }
-
-        function onRecognitionEnd() {
-            addDebugLog(`✓ onRecognitionEnd fired. Transcript: "${currentTranscript}"`);
-            addDebugLog(`Current appState: ${appState}`);
-            
-            micButton.classList.remove('listening');
-
-            if (currentTranscript.trim()) {
-                addDebugLog('Transcript is not empty, showing send button');
-                sendButton.classList.add('visible');
-                buttonLabel.textContent = 'Tap "Enviar" or speak again';
-                updateStatus('Pronto para enviar');
-                
-                // Auto-send after a short delay
-                setTimeout(() => {
-                    addDebugLog(`Auto-send check: transcript="${currentTranscript.trim()}", appState="${appState}"`);
-                    if (currentTranscript.trim() && appState === 'listening') {
-                        addDebugLog('✓ Auto-sending transcript');
-                        sendTranscript();
-                    }
-                }, 500);
-            } else {
-                addDebugLog('Transcript is empty, resetting to idle');
-                appState = 'idle';
-                buttonLabel.textContent = 'Tap to speak';
-                updateStatus('Aguardando...');
-            }
-        }
-
-        function onRecognitionError(event) {
-            addDebugLog(`⚠️ onRecognitionError: ${event.error}`);
-            
-            // Ignore 'aborted' and 'no-speech' errors - these are normal iOS behaviors
-            if (event.error === 'aborted' || event.error === 'no-speech') {
-                addDebugLog(`Ignoring normal error: ${event.error}`);
-                if (appState === 'listening') {
-                    appState = 'idle';
-                }
-                micButton.classList.remove('listening');
-                buttonLabel.textContent = 'Tap to speak';
-                updateStatus('Aguardando...');
-                return;
-            }
-            
-            addDebugLog(`ERROR: ${event.error}`);
-            updateStatus(`Error: ${event.error}`);
-            displayArea.innerHTML += `<div class="error">Error: ${event.error}</div>`;
-            
-            if (appState === 'listening') {
-                appState = 'idle';
-            }
-            micButton.classList.remove('listening');
-            buttonLabel.textContent = 'Tap to speak';
-        }
-
-        function sendTranscript() {
-            addDebugLog(`>>> sendTranscript called. appState=${appState}, transcript="${currentTranscript}"`);
-            
-            if (!currentTranscript.trim()) {
-                addDebugLog('No speech detected');
-                updateStatus('No speech detected. Try again.');
-                return;
-            }
-
-            if (appState !== 'listening' && appState !== 'idle') {
-                addDebugLog(`Cannot send. appState is ${appState}`);
-                return;
-            }
-
-            sendButton.classList.remove('visible');
-            handleUserInput(currentTranscript);
-        }
-
-        async function handleUserInput(transcript) {
-            addDebugLog(`>>> handleUserInput called with: "${transcript}"`);
-            addMessage(transcript, 'user');
-            
-            appState = 'processing';
-            setProcessingTimeout();
-            micButton.classList.add('processing');
-            buttonLabel.textContent = 'Processing...';
-            updateStatus('Processando...');
-            showLoadingIndicator();
-
-            try {
-                addDebugLog('Calling Gemini API...');
-                const response = await getGeminiResponse(transcript);
-                addDebugLog(`✓ API response received: ${response.substring(0, 50)}...`);
-                
-                removeLoadingIndicator();
-                addMessage(response, 'jarvis');
-                
-                // Get audio from ElevenLabs
-                addDebugLog('Calling ElevenLabs TTS API...');
-                await playAudioResponse(response);
-            } catch (error) {
-                addDebugLog(`❌ Error: ${error.message}`);
-                removeLoadingIndicator();
-                const errorMsg = `Error: ${error.message}`;
-                addMessage(errorMsg, 'jarvis');
-                updateStatus(`Erro: ${error.message}`);
-                appState = 'idle';
-                micButton.classList.remove('processing');
-                buttonLabel.textContent = 'Tap to speak';
-                currentTranscript = '';
-                clearProcessingTimeout();
-            }
-        }
-
-        async function getGeminiResponse(userMessage) {
-            const payload = {
-                system_instruction: {
-                    parts: [
-                        {
-                            text: SYSTEM_PROMPT
-                        }
-                    ]
-                },
-                contents: [
-                    {
-                        role: 'user',
-                        parts: [
-                            {
-                                text: userMessage
-                            }
-                        ]
-                    }
-                ]
+            recognition.onstart = () => {
+                log('Speech recognition started');
             };
 
-            const response = await fetch(GEMINI_API_URL, {
+            recognition.onresult = (event) => {
+                let interim = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const t = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        transcript += t;
+                    } else {
+                        interim += t;
+                    }
+                }
+                if (interim) {
+                    els.micLabel.textContent = `"${interim}"`;
+                }
+            };
+
+            recognition.onend = () => {
+                log(`Speech ended. Transcript: "${transcript}"`);
+                if (transcript.trim() && appState === 'listening') {
+                    setState('processing');
+                    setSafetyTimeout();
+                    processUserInput(transcript);
+                } else {
+                    setState('idle');
+                    els.micLabel.textContent = 'Tap to speak';
+                }
+            };
+
+            recognition.onerror = (event) => {
+                if (event.error === 'aborted' || event.error === 'no-speech') {
+                    log(`Speech error (ignored): ${event.error}`);
+                } else {
+                    log(`Speech error: ${event.error}`);
+                }
+                if (appState === 'listening') {
+                    setState('idle');
+                    els.micLabel.textContent = 'Tap to speak';
+                }
+            };
+
+            try {
+                recognition.start();
+            } catch (e) {
+                log(`Error starting recognition: ${e.message}`);
+                setState('idle');
+            }
+        }
+
+        els.micBtn.addEventListener('click', () => {
+            log(`Mic tapped. State: ${appState}`);
+            if (appState === 'idle') {
+                startListening();
+            }
+        });
+
+        // ============================================================================
+        // API CALLS
+        // ============================================================================
+        async function processUserInput(userText) {
+            addMessage(userText, 'user');
+            els.micLabel.textContent = 'Processing...';
+
+            try {
+                log('Calling Gemini API...');
+                const response = await callGemini(userText);
+                log(`Gemini response: ${response.substring(0, 50)}...`);
+                
+                addMessage(response, 'jarvis');
+                
+                log('Calling ElevenLabs TTS...');
+                await playAudio(response);
+                
+                clearSafetyTimeout();
+                setState('idle');
+                els.micLabel.textContent = 'Tap to speak';
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                addMessage(`Error: ${error.message}`, 'jarvis');
+                clearSafetyTimeout();
+                setState('idle');
+                els.micLabel.textContent = 'Tap to speak';
+            }
+        }
+
+        async function callGemini(userText) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKeys.gemini}`;
+            
+            const response = await fetch(url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    system_instruction: {
+                        parts: [{ text: CONFIG.SYSTEM_PROMPT }]
+                    },
+                    contents: [{
+                        role: 'user',
+                        parts: [{ text: userText }]
+                    }]
+                })
             });
 
             const data = await response.json();
-
             if (!response.ok) {
-                const errorMsg = data.error?.message || `API error: ${response.status}`;
-                throw new Error(errorMsg);
+                throw new Error(data.error?.message || `API error: ${response.status}`);
             }
 
-            const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-            if (!content) {
-                throw new Error('No response text from API');
-            }
-
-            return content;
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error('No response from Gemini');
+            return text;
         }
 
-        async function playAudioResponse(text) {
-            try {
-                addDebugLog('Requesting audio from ElevenLabs...');
-                
-                const payload = {
+        async function playAudio(text) {
+            setState('speaking');
+            
+            const url = `https://api.elevenlabs.io/v1/text-to-speech/${CONFIG.ELEVENLABS_VOICE_ID}`;
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'xi-api-key': apiKeys.elevenlabs,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
                     text: text,
                     model_id: 'eleven_multilingual_v2',
-                    voice_settings: {
-                        stability: 0.5,
-                        similarity_boost: 0.75
-                    }
-                };
+                    voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+                })
+            });
 
-                const response = await fetch(ELEVENLABS_API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'xi-api-key': ELEVENLABS_API_KEY,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.text();
-                    throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
-                }
-
-                addDebugLog('✓ Audio received from ElevenLabs');
-
-                // Convert response to blob
-                const audioBlob = await response.blob();
-                addDebugLog(`Audio blob size: ${audioBlob.size} bytes`);
-
-                // Create blob URL
-                const blobUrl = URL.createObjectURL(audioBlob);
-                addDebugLog(`Blob URL created`);
-
-                // Use global audio player for iOS Safari compatibility
-                audioPlayer.src = blobUrl;
-                appState = 'speaking';
-                updateStatus('Respondendo...');
-                addDebugLog('Starting audio playback');
-
-                // Set up event handlers
-                audioPlayer.onended = () => {
-                    addDebugLog('✓ audioPlayer.onended fired');
-                    addDebugLog('Waiting 500ms before resetting to idle...');
-                    
-                    // 500ms delay before resetting to avoid race conditions on iOS
-                    setTimeout(() => {
-                        addDebugLog('>>> RESETTING TO IDLE AFTER AUDIO <<<');
-                        appState = 'idle';
-                        clearProcessingTimeout();
-                        updateStatus('Aguardando...');
-                        micButton.classList.remove('processing', 'listening');
-                        buttonLabel.textContent = 'Tap to speak';
-                        currentTranscript = '';
-                        sendButton.classList.remove('visible');
-                        addDebugLog('✓ State reset complete. Ready for next turn.');
-                        
-                        // Clean up blob URL
-                        URL.revokeObjectURL(blobUrl);
-                    }, 500);
-                };
-
-                audioPlayer.onerror = (error) => {
-                    addDebugLog(`❌ audioPlayer.onerror: ${error}`);
-                    appState = 'idle';
-                    clearProcessingTimeout();
-                    updateStatus('Aguardando...');
-                    micButton.classList.remove('processing', 'listening');
-                    buttonLabel.textContent = 'Tap to speak';
-                    currentTranscript = '';
-                    sendButton.classList.remove('visible');
-                    URL.revokeObjectURL(blobUrl);
-                };
-
-                // Play the audio
-                const playPromise = audioPlayer.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        addDebugLog(`❌ audioPlayer.play() error: ${error.message}`);
-                        appState = 'idle';
-                        clearProcessingTimeout();
-                        updateStatus('Aguardando...');
-                        micButton.classList.remove('processing', 'listening');
-                        buttonLabel.textContent = 'Tap to speak';
-                        currentTranscript = '';
-                        sendButton.classList.remove('visible');
-                    });
-                }
-            } catch (error) {
-                addDebugLog(`❌ Error in playAudioResponse: ${error.message}`);
-                appState = 'idle';
-                clearProcessingTimeout();
-                throw error;
+            if (!response.ok) {
+                throw new Error(`ElevenLabs error: ${response.status}`);
             }
+
+            // Convert to ArrayBuffer, then to base64 data URL
+            const arrayBuffer = await response.arrayBuffer();
+            const bytes = new Uint8Array(arrayBuffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            const base64 = btoa(binary);
+            const dataUrl = `data:audio/mpeg;base64,${base64}`;
+
+            log(`Audio data URL created (${base64.length} chars)`);
+
+            // Create new Audio element and play
+            const audio = new Audio(dataUrl);
+            audio.onended = () => {
+                log('Audio playback ended');
+                clearSafetyTimeout();
+                setState('idle');
+                els.micLabel.textContent = 'Tap to speak';
+            };
+            audio.onerror = () => {
+                log('❌ Audio playback error');
+                clearSafetyTimeout();
+                setState('idle');
+                els.micLabel.textContent = 'Tap to speak';
+            };
+
+            log('Playing audio...');
+            await audio.play();
         }
 
+        // ============================================================================
+        // DISPLAY
+        // ============================================================================
         function addMessage(text, type) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}-message`;
-            messageDiv.textContent = text;
-            displayArea.appendChild(messageDiv);
-            displayArea.scrollTop = displayArea.scrollHeight;
+            const msg = document.createElement('div');
+            msg.className = `message ${type === 'user' ? 'msg-user' : 'msg-jarvis'}`;
+            msg.textContent = text;
+            els.displayArea.appendChild(msg);
+            els.displayArea.scrollTop = els.displayArea.scrollHeight;
         }
 
-        function showLoadingIndicator() {
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'loading-container';
-            loadingDiv.id = 'loadingIndicator';
-            loadingDiv.innerHTML = '<div class="spinner"></div><div class="loading-text">Processando...</div>';
-            displayArea.appendChild(loadingDiv);
-            displayArea.scrollTop = displayArea.scrollHeight;
-        }
-
-        function removeLoadingIndicator() {
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            if (loadingIndicator) {
-                loadingIndicator.remove();
-            }
-        }
-
-        addDebugLog('Jarvis initialized with unified state machine');
+        // ============================================================================
+        // INIT
+        // ============================================================================
+        log('Jarvis ready');
+        updateUI();
     </script>
 </body>
 </html>
